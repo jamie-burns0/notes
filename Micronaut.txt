@@ -1,0 +1,18 @@
+Microservices
+
+https://www.unlogged.io/post/springboot-vs-quarkus-vs-micronaut
+https://www.reddit.com/r/java/comments/yr8yli/micronaut_vs_othersspring_boot_quarkus_and_co/
+
+
+Micronaut
+- see https://micronaut.io/
+- https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools
+
+Quarkus
+- see https://quarkus.io/
+
+Helidon
+- https://helidon.io/docs/v4/mp/guides/quickstart
+
+Vert.x
+- https://vertx.io/docs/#microservices

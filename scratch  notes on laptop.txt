@@ -1,0 +1,27 @@
+scratch  notes
+
+
+PowerShell (self)
+
+
+$project_name = "scratch"
+
+$java_version = "jdk-21.0.2+13"
+$gradle_version = "gradle-8.6"
+
+$projects_home = "c:/dev/projects"
+$tools_home = "c:/dev/tools"
+
+$project_home = "${projects_home}/${project_name}"
+
+$env:JAVA_HOME = "${tools_home}/${java_version}"
+$env:GRADLE_HOME = "${tools_home}/${gradle_version}"
+$vscode_home = "${tools_home}/vscode"
+
+$env:Path = "$env:JAVA_HOME/bin;$env:GRADLE_HOME/bin;${vscode_home};" + $env:Path
+
+
+
+-- Launch vscode
+
+cd $project_home && code "${project_name}.code-workspace"

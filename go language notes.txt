@@ -1,0 +1,136 @@
+go language notes
+
+- https://go.dev/
+- https://go.dev/doc/install
+- https://go.dev/dl/
+
+- https://go.dev/doc/code
+- https://pkg.go.dev/
+
+
+$timestamp="20240430-2233"
+$env:DISTRO_NAME="kali-linux"
+$env:VM_NAME="kali-go-wsl"
+
+wsl --import $env:VM_NAME C:\dev\work\virtual-machines\$env:VM_NAME c:\dev\work\templates\$env:DISTRO_NAME-base-$timestamp.tar
+
+
+wsl ~ -d kali-go-wsl -e zsh
+
+sudo apt update && sudo apt full-upgrade && sudo apt autoremove
+
+wsl --terminate kali-go-wsl
+
+
+mkdir -m700 ~/.ssh
+
+tee -a ~/.ssh/config > /dev/null <<EOT
+Host github.com
+  IdentityFile /home/jamie/.ssh/id_ed25519
+EOT
+
+chmod 600 ~/.ssh/config
+cp /mnt/c/users/jamie/.ssh/id_ed25519 /home/jamie/.ssh/id_ed25519
+chmod 600 /home/jamie/.ssh/id_ed25519
+
+
+git config --global user.name "jamie"
+git config --global user.email "jamie@jamieburns.me"
+git config --global pull.ff only
+git config --global alias.slog "log --graph --all --topo-order --decorate --oneline"
+
+
+export GO_VERSION=1.23.1
+export GO_DOWNLOAD_FILENAME=go${GO_VERSION}.linux-amd64.tar.gz
+export GO_DOWNLOAD_URL=https://go.dev/dl/${GO_DOWNLOAD_FILENAME}
+
+wget ${GO_DOWNLOAD_URL} -P /tmp
+
+sudo mkdir /opt/go
+
+# we need the double-quotes for the ${GO_VERSION} to work in the transform expression
+
+sudo tar --transform "s/^go/go${GO_VERSION}/" -xvf /tmp/${GO_DOWNLOAD_FILENAME} -C /opt/go
+
+sudo ln -vfns /opt/go/go${GO_VERSION} /opt/go/latest
+
+# these will be installed at GOPATH /home/jamie/go or GOBIN if it is set
+- see https://blog.devtrovert.com/p/goroot-gopath-go-get-go-mod-tidy
+Should we set GOBIN to /opt/go/go1.23.1 so everything is together?
+
+/opt/go/go1.23.1/bin/go install -v golang.org/x/tools/gopls@latest
+/opt/go/go1.23.1/bin/go install -v github.com/go-delve/delve/cmd/dlv@latest
+
+
+
+sudo mkdir /usr/local/go
+
+# we need the double-quotes for the ${GO_VERSION} to work in the transform expression
+
+sudo tar --transform "s/^go/go${GO_VERSION}/" -xvf /tmp/${GO_DOWNLOAD_FILENAME} -C /usr/local/go
+
+sudo ln -vfns /usr/local/go/go${GO_VERSION} /usr/local/go/latest
+
+sudo /usr/local/go/go1.23.1/bin/go install -v golang.org/x/tools/gopls@latest
+
+
+
+mkdir -p ~/dev/projects && cd ~/dev/projects
+
+git clone git@github.com:jamie-burns0/new-era.git new-era
+
+cd new-era && git checkout -b go
+
+mkdir learn-go && cd learn-go
+
+tee learn-go.code-workspace > /dev/null <<EOT
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "editor.parameterHints.enabled": false,
+        "editor.quickSuggestionsDelay": 3000,
+        "editor.inlineSuggest.showToolbar": "onHover",
+        "editor.inlineSuggest.enabled": false,
+        "editor.detectIndentation": false,
+        "go.goroot": "/opt/go/go${GO_VERSION}"
+    }
+}
+EOT
+
+code learn-go.code-workspace
+
+# install go extension
+- https://code.visualstudio.com/docs/languages/go
+- https://learn.microsoft.com/en-us/azure/developer/go/configure-visual-studio-code
+- https://github.com/golang/vscode-go
+
+# learn go code
+- https://go.dev/doc/code
+- https://www.youtube.com/watch?v=1MXIGYrMk80
+- https://go.dev/blog/all
+
+- https://go.dev/blog/package-names
+
+
+
+/opt/go/go1.23.1/bin/go mod init jamieburns.me/go-demo-1
+
+# strings
+- https://go.dev/blog/strings
+- https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/
+- https://pkg.go.dev/strings
+
+# when we return
+- create a go project in dev/projects/…
+- is there a tool like gradle, micronaut, rust have to create this?
+- launch code
+- add go extensions
+- have a go at the learn
+  - https://go.dev/learn/
+
+
+

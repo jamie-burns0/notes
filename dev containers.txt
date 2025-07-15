@@ -1,0 +1,16 @@
+https://developer.fedoraproject.org/start.html
+https://www.stuartellis.name/articles/fedora-workstation-setup/
+
+
+
+https://developers.redhat.com/articles/2023/02/14/remote-container-development-vs-code-and-podman#
+https://github.com/devcontainers
+https://code.visualstudio.com/remote/advancedcontainers/docker-options
+https://code.visualstudio.com/remote/advancedcontainers/add-nonroot-user#_specifying-a-user-for-vs-code
+https://docs.github.com/en/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration/introduction-to-dev-containers
+https://blog.logrocket.com/using-dev-containers-vs-code-easier-dev-setup/
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux_atomic_host/7/html/managing_containers/finding_running_and_building_containers_with_podman_skopeo_and_buildah
+https://docs.podman.io/en/v1.6.4/markdown/podman-create.1.html
+https://code.visualstudio.com/docs/devcontainers/create-dev-container
+https://docs.github.com/en/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration/introduction-to-dev-containers#dockerfile
+https://github.com/devcontainers/images/tree/main/src/base-alpine

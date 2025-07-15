@@ -1,0 +1,57 @@
+JavaEE notes
+
+$env:VM_NAME="kali-javaee-wsl2"
+$env:DISTRO_NAME="kali-java-wsl"
+$timestamp="20240801-1002"
+
+wsl --import $env:VM_NAME C:\dev\work\virtual-machines\$env:VM_NAME c:\dev\work\templates\$env:DISTRO_NAME-base-$timestamp.tar
+
+wsl ~ -d $env:VM_NAME -e zsh
+
+mkdir -p dev/projects
+cd dev/projects
+
+sudo apt update && sudo apt full-upgrade && sudo apt autoremove
+
+exit
+
+wsl --terminate $env:VM_NAME
+
+- see Visual Studio Code on WSL.txt for installing latest Java and Gradle
+- to update vscode java and gradle see same document
+  - see updating ~/.vscode-server/data/Machine/settings.json
+
+
+Open Liberty
+- https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext
+- https://github.com/OpenLiberty/liberty-tools-vscode/blob/HEAD/docs/user-guide.md
+
+
+Liberty project
+
+mkdir -p ~/dev/projects/javaee/liberty1
+cd ~/dev/projects/javaee/liberty1
+
+mkdir -p src/main/liberty/config
+touch src/main/liberty/config/server.xml
+
+tee -a liberty1.code-workspace > /dev/null <<EOT
+{
+        "folders": [
+                {
+                        "path": "app"
+                }
+        ],
+        "settings": {
+                "java.project.explorer.showNonJavaResources": true,
+                "java.dependency.packagePresentation": "flat",
+                "java.configuration.updateBuildConfiguration": "disabled",
+                "java.configuration.detectJdksAtStart": false,
+                "java.import.gradle.enabled": false,
+                "java.import.gradle.wrapper.enabled": false,
+                "java.import.gradle.annotationProcessing.enabled": false,
+                "java.import.gradle.version": "8.9",
+                "java.import.gradle.java.home": "/opt/java/jdk-22.0.2",
+                "java.import.gradle.home": "/opt/gradle/gradle-8.9"
+        }
+}

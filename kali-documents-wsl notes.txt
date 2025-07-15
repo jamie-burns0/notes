@@ -1,0 +1,92 @@
+kali-documents-wsl notes
+
+# PowerShell (self)
+
+$timestamp="20240801-1002"
+$distro_name="kali-java-wsl"
+$vm_name="kali-documents-wsl"
+
+wsl --import $vm_name C:\dev\work\virtual-machines\$vm_name c:\dev\work\templates\$distro_name-base-$timestamp.tar
+
+wsl ~ -d kali-documents-wsl -e zsh
+
+
+# WSL
+
+sudo apt update && sudo apt full-upgrade && sudo apt autoremove
+exit
+
+
+# PowerShell (self)
+
+wsl --terminate kali-documents-wsl
+
+wsl ~ -d kali-documents-wsl -e zsh
+
+
+# WSL
+
+sudo apt install graphviz
+
+# https://plantuml.com/download
+
+export plantuml_version=1.2024.6
+wget https://github.com/plantuml/plantuml/releases/download/v${plantuml_version}/plantuml-${plantuml_version}.jar -P /tmp
+
+sudo mkdir -p /opt/plantuml/plantuml-${plantuml_version}
+sudo mv /tmp/plantuml-${plantuml_version}.jar /opt/plantuml/plantuml-${plantuml_version}
+sudo ln -vfns /opt/plantuml/plantuml-${plantuml_version} /opt/plantuml/latest
+
+
+mkdir -p ~/.vscode-server/data/Machine
+
+tee -a ~/.vscode-server/data/Machine/settings.json > /dev/null <<EOT
+{
+    "files.autoSave": "afterDelay"
+}
+EOT
+
+
+# WARNING - this is shared by ***ALL*** vscode instances ***EVERYWHERE***
+# We only need to do this if keybindings.json does not exist in the location below.
+
+# If we had keybindings just for kali-documents-wsl, how would we add them to keybindings.json?
+
+# This is an example, so that we have a template to document any special case keybindings
+
+tee -a /mnt/c/Users/Jamie/AppData/Roaming/Code/User/keybindings.json > /dev/null <<EOT
+// Place your key bindings in this file to override the defaults
+[
+    {
+        "key": "ctrl+\\",
+        "command": "editor.action.inlineSuggest.trigger",
+        "when": "config.github.copilot.inlineSuggest.enable && editorTextFocus && !editorHasSelection && !inlineSuggestionsVisible"
+    },
+    ...
+]
+EOT
+
+
+mkdir -p ~/dev/projects && cd dev/projects
+git clone git@github.com:jamie-burns0/documents.git documents
+
+cd documents
+
+# for plantuml settings, see https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml
+
+tee documents.code-workspace > /dev/null <<EOT
+{
+        "folders": [
+                {
+                        "path": "."
+                }
+        ],
+        "settings": {
+		"files.autoSave": "afterDelay",
+                "plantuml.jar": "/opt/plantuml/plantuml-${plantuml_version}/plantuml-${plantuml_version}.jar",
+                "plantuml.java": "/opt/java/latest/bin/java"
+        }
+}
+EOT
+
+code documents.code-workspace

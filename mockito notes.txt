@@ -1,0 +1,70 @@
+package ...
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+
+import static org.mockito.Mockito.*;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import org.mockito.MockedStatic;
+
+public class SomeClassWithStaticMethodsTest
+{
+	MockedStatic<SomeClassWithStaticMethods> mockSomeClassWithStaticMethods;
+	
+	@BeforeEach
+	void before()
+	{
+		mockSomeClassWithStaticMethods = mockStatic( SomeClassWithStaticMethods.class, CALLS_REAL_METHODS );
+		mockSomeClassWithStaticMethods.when( SomeClassWithStaticMethods.someMethod() ).thenReturn( "whatever" );
+	}
+	
+	@AfterEach
+	void after()
+	{
+		mockSomeClassWithStaticMethods.close();
+	}
+	
+	@Test
+	{
+		var mockSomeClass = mock( SomeClass.class, withSettings().extraInterfaces( SomeInterface.class ) );
+		when( mockSomeClass.someMethod( any() ) ).thenReturn( "anything" );
+		when( mockSomeClass.someMethod() ).thenThrow( new RuntimeException( "" ) );
+		
+		var mockSomeOtherClass = mock( SomeOtherClass.class, withSettings().defaultAnswer( CALLS_REAL_METHODS ) );
+		
+		mockSomeClassWithStaticMethods.when( SomeClassWithStaticMethods::someStaticMethodWithoutArguments ).thenReturn( x );
+		mockSomeClassWithStaticMethods.when( () -> SomeClassWithStaticMethods.someStaticMethodWithArguments( any(), any() ).theReturn( List.of() );
+		
+		assertThat( mockSomeClass.methodUnderTest() ).isNull();
+		assertThat( mockSomeClass ).isPresent();
+		assertThat( mockSomeClass ).isEmpty();
+		assertThat( someList ).contains( someObject );
+		assertThat( someList ).hasSize( 1 );
+		assertThat( someList ).first().isEqualTo( someObject );
+		assertThat( someMap(?) ).isNotNull()
+							  .extracting( "key1", "key2" )
+							  .containsSequence( value1, value2 );
+		assertThat( mockSomeClass.get().something() ).hasValue( someValue );
+		assertThat( mockSomeClass.something() ).isSameAs( somethingElse );
+		
+		
+		verify( mockSomeClass, never() ).methodWeDontWantCalled( any(), any( SomeClass.class ), anyInt(), anyString() );
+		verify( mockSomeClass, times(1) ).methodUnderTest()
+		verify( mockSomeClass, times(1) ).methodUnderTest( eq( expectedReturnValue ) );
+		verify( mockSomeClass, times(1) ).someMethod( argThat( x -> x.size() == 3 ) );
+		
+		mockSomeClassWithStaticMethods.verify(...)...
+		mockSomeClassWithStaticMethods.verify( () -> SomeClassWithStaticMethods.someStaticMethodWithArguments( any() ), times(1) );
+	}
+}

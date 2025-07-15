@@ -1,0 +1,3 @@
+Copilot notes
+
+- https://www.rashadphz.com/blog/gh-copilot-auto-suggest-considered-harmful

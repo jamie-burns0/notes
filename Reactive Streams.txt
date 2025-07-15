@@ -1,0 +1,26 @@
+Reactive Streams
+
+
+Free streams
+- https://github.com/bytewax/awesome-public-real-time-datasets
+- https://github.com/ColinEberhardt/awesome-public-streaming-datasets
+- https://ably.com/blog/10-realtime-data-sources-you-wont-believe-are-free
+- https://en.wikipedia.org/wiki/List_of_datasets_for_machine-learning_research
+
+
+Mock streams
+- https://github.com/tinybirdco/mockingbird
+- https://github.com/MaterializeInc/datagen
+- https://github.com/cloudhut/owl-shop
+
+
+Free datasets
+- https://www.searchenginejournal.com/free-data-sources/302601/
+- https://stackoverflow.com/questions/22535217/whats-are-some-real-time-data-sources
+- https://www.projectpro.io/article/100-machine-learning-datasets-curated-for-you/407
+- https://www.ml4devs.com/articles/datasets-for-machine-learning-and-data-science/
+- https://data.world/datasets/machine-learning
+- https://github.com/awesomedata/awesome-public-datasets
+
+
+

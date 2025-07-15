@@ -1,0 +1,56 @@
+# rust notes
+
+https://doc.rust-lang.org/book/title-page.html
+https://www.rust-lang.org/tools/install
+https://doc.rust-lang.org/std/index.html
+https://code.visualstudio.com/docs/languages/rust
+
+# install
+- duplicated kali-linux - see kali linux learnings.txt in notes
+- see https://www.rust-lang.org/tools/install
+- installed into wsl kali-linux so that we don't have to install Visual Studio 2022 on Windows
+
+wsl ~ -d kali-linux-rust
+
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+sudo apt update
+sudo apt full-upgrade
+sudo apt install build-essential
+
+
+# docker
+- provided by asking Copilot, "how to install docker engine on kali-linux"
+
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" | sudo tee /etc/apt/sources.list.d/docker.list
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo systemctl start docker
+sudo docker run hello-world
+
+or
+
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" | sudo tee /etc/apt/sources.list.d/docker.list
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io
+sudo systemctl start docker
+sudo docker run hello-world
+
+
+# Rust-specific guide
+- https://docs.docker.com/language/rust/
+
+
+# hello world
+- see https://doc.rust-lang.org/book/ch01-02-hello-world.html
+- https://toml.io/en/
+
+
+# with vscode
+- if having issues initially launching code
+  - make sure vscode bin directory is in windows path
+  - might have to clean up linux with
+    rm -r ~/.vscode-server/
+    then restart linux

@@ -1,0 +1,47 @@
+schema.ts
+
+import exp from 'constants';
+import { buildSchema } from 'graphql';
+
+const schema = buildSchema(`#gql
+    type Query {
+        recommendedBooks: [Book!]!
+    }
+
+    type Book {
+        id: ID!
+        title: String!
+        author: String!
+    }
+`);
+
+export { schema };
+
+
+data.ts
+
+const bookData = [
+    { id: '1', title: 'Harry Potter and the Chamber of Secrets', author: 'J.K. Rowling'},
+    { id: '2', title: 'Jurassic Park', author: 'Michael Crichton'},
+    { id: '3', title: 'The Hobbit', author: 'J.R.R. Tolkien'},
+    { id: '4', title: 'The Catcher in the Rye', author: 'J.D. Salinger'},
+    { id: '5', title: 'To Kill a Mockingbird', author: 'Harper Lee'},
+    { id: '6', title: 'The Great Gatsby', author: 'F. Scott Fitzgerald'}
+];
+
+export { bookData };
+
+
+
+
+server.ts
+
+import { ApolloServer } from '@apollo/server';
+import startStandaloneServer from '@apollo/server/standalone';
+
+import { schema } from './schema';
+
+const typeDefs = schema;
+
+
+

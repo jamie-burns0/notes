@@ -1,0 +1,17 @@
+angular notes
+- https://angular.dev/tutorials/learn-angular
+- https://angular.dev/guide/components
+
+- https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/Angular_getting_started
+- https://blog.angular-university.io/tag/angular-core/
+- 
+
+- https://code.visualstudio.com/docs/nodejs/angular-tutorial
+
+- https://tailwindcss.com/docs/guides/angular
+- https://sira.riazer.com/docs/guide/installation
+
+
+Setup nvm, node, npm, typescript
+- see nodejs.txt 
+

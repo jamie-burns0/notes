@@ -1,0 +1,8 @@
+Java education
+
+Oracle
+- Java Magazine, see https://blogs.oracle.com/javamagazine/
+
+
+Java styleguides
+- https://cr.openjdk.org/~alundblad/styleguide/index-v6.html

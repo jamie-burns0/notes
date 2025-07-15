@@ -1,0 +1,32 @@
+\path\to\git-bash.exe --cd="\path\to\files"
+
+total classes
+
+find . -name "*.java" | wc -l
+
+4214 -> 4294
+
+4225 -> 4356
+4225 - 11 = 4214
+4356 - 62 = 4294
+
+
+classes under test
+
+find . -name "*Test.java" | wc -l
+
+11 -> 62
+
+
+unit tests
+
+grep -E -R "@Test" * | wc -l
+
+40 -> 400
+
+coverage
+
+40 / 4214 = 0.94% coverage
+400 / 4294 = 9.3 % coverage
+
+increased test coverage from <1% to 9.3%

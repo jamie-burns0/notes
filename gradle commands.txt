@@ -1,0 +1,123 @@
+Gradle notes
+- https://docs.gradle.org/current/userguide/userguide.html
+- https://docs.gradle.org/current/dsl/
+
+
+create a new project with Gradle
+
+PowerShell (as self)
+
+$env:PROJECT_NAME = "2024Q1"
+$env:GRADLE_PROJECT_TYPE = "java-application"
+
+$env:JAVA_HOME = "c:\dev\tools\jdk-21.0.2+13"
+$env:GRADLE_HOME = "c:\dev\tools\gradle-8.6"
+
+$env:PROJECT_HOME = "c:\dev\projects\new-era"
+
+$env:PROJECT_PATH = "$env:PROJECT_HOME\$env:PROJECT_NAME\$ENV:GRADLE_PROJECT_TYPE"
+
+if (!(Test-Path -PathType Container $env:PROJECT_PATH )) {
+    New-Item -ItemType Directory -Path $env:PROJECT_PATH
+}
+
+cd $env:PROJECT_HOME\$env:PROJECT_NAME
+
+Start-Process -FilePath $env:GRADLE_HOME\bin\gradle.bat -ArgumentList "init --type $env:GRADLE_PROJECT_TYPE --test-framework junit-jupiter --package me.jamieburns --project-name $env:PROJECT_NAME-$env:GRADLE_PROJECT_TYPE --java-version 21 --dsl groovy"
+
+
+
+
+set PROJECT_NAME=2024Q1
+set GRADLE_PROJECT_TYPE=java-application
+REM set GRADLE_PROJECT_TYPE=java-library
+
+set JAVA_HOME=c:\dev\tools\jdk-21.0.2+13
+set GRADLE_HOME=c:\dev\tools\gradle-8.6
+
+set GRADLE_OPTS=
+
+set PROJECT_HOME=c:\dev\projects\new-era
+
+set PROJECT_PATH=%PROJECT_HOME%\%PROJECT_NAME%-%GRADLE_PROJECT_TYPE%
+
+mkdir %PROJECT_PATH%
+
+cd %PROJECT_PATH%
+
+%GRADLE_HOME%\bin\gradle.bat init --no-daemon --type %GRADLE_PROJECT_TYPE% --test-framework junit-jupiter --package me.jamieburns --project-name %PROJECT_NAME%-%GRADLE_PROJECT_TYPE% --java-version 21 --dsl groovy
+
+- choose 'yes' for new apis
+
+
+
+# WSL
+
+export PROJECT_NAME=springboot6
+
+export JAVA_HOME=/opt/java/jdk-22.0.2
+export GRADLE_VERSION=8.10
+export GRADLE_HOME=/opt/gradle/gradle-$GRADLE_VERSION
+
+cd dev/projects/java
+
+mkdir $PROJECT_NAME && cd $PROJECT_NAME
+
+$GRADLE_HOME/bin/gradle init --test-framework junit-jupiter --package me.jamieburns --project-name $PROJECT_NAME --java-version 21 --dsl groovy
+
+1: Application
+1: Java
+1: Single application project
+Generate build using new APIs: yes
+
+# clean up after running init
+
+rm -rf gradlew* gradle
+
+# remove plugins from settings.gradle
+
+tee settings.gradle > /dev/null <<EOT
+rootProject.name = '${PROJECT_NAME}'
+include('app')
+EOT
+
+# remove dependencies from app/build.gradle
+
+nano app/build.gradle
+
+# create code-workspace file
+
+tee $PROJECT_NAME.code-workspace > /dev/null <<EOT
+{
+	"folders": [
+                {
+                        "path": "app"
+                }
+        ],
+        "settings": {
+                "java.project.explorer.showNonJavaResources": true,
+                "java.dependency.packagePresentation": "flat",
+                "java.configuration.updateBuildConfiguration": "disabled",
+                "java.configuration.detectJdksAtStart": false,
+                "java.import.gradle.enabled": true,
+                "java.import.gradle.wrapper.enabled": false,
+                "java.import.gradle.annotationProcessing.enabled": false,
+                "java.import.gradle.version": "${GRADLE_VERSION}",
+                "java.import.gradle.java.home": "${JAVA_HOME}",
+                "java.import.gradle.home": "${GRADLE_HOME}",
+		"java.signatureHelp.enabled": false,
+                "editor.parameterHints.enabled": false,
+                "editor.quickSuggestionsDelay": 3000,
+                "editor.inlineSuggest.showToolbar": "onHover",
+                "editor.inlineSuggest.enabled": false,
+		"editor.detectIndentation": false
+        }
+}
+EOT
+
+
+# open project
+
+code $PROJECT_NAME.code-workspace
+
+

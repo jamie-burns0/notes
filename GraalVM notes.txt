@@ -1,0 +1,41 @@
+GraalVM notes
+
+- https://www.graalvm.org/downloads/
+- https://www.graalvm.org/latest/reference-manual/native-image/#prerequisites
+
+- https://graalvm.github.io/native-build-tools/latest/gradle-plugin.htm
+- https://graalvm.github.io/native-build-tools/latest/gradle-plugin-quickstart.html
+
+- https://stackoverflow.com/questions/68298436/cgo-exec-gcc-exec-gcc-executable-file-not-found-in-path-error-in-egress-o
+
+
+# installing
+- see Visual Studio Code on WSL.txt
+
+Native Image prerequisites
+- https://www.graalvm.org/latest/reference-manual/native-image/#prerequisites
+
+sudo apt install build-essential zlib1g-dev
+
+
+export JAVA_VERSION=graalvm-jdk-23+37.1
+export JAVA_DOWNLOAD_FILENAME=graalvm-jdk-23_linux-x64_bin.tar.gz
+export JAVA_DOWNLOAD_URL=https://download.oracle.com/graalvm/23/latest/${JAVA_DOWNLOAD_FILENAME}
+
+wget ${JAVA_DOWNLOAD_URL} -P /tmp
+sudo mkdir -p /opt/java
+sudo tar xvf /tmp/${JAVA_DOWNLOAD_FILENAME} -C /opt/java
+sudo ln -vfns /opt/java/${JAVA_VERSION} /opt/java/latest
+
+
+
+# with Gradle
+- https://graalvm.github.io/native-build-tools/latest/gradle-plugin-quickstart.html
+- https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#_reference_documentation
+
+
+export JAVA_HOME=/opt/java/graalvm-jdk-23+37.1
+
+/opt/gradle/gradle-8.10.1/bin/gradle clean nativeCompile
+
+./app/build/native/nativeCompile/app

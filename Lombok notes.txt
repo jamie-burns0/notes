@@ -1,0 +1,9 @@
+Lombok notes
+- https://projectlombok.org/
+- https://projectlombok.org/features/ToString
+
+- https://docs.freefair.io/gradle-plugins/8.10/
+  - version 8.10 is for gradle 8.10.x
+  - interested in JaCoCo - code coverage tool
+    - https://docs.freefair.io/gradle-plugins/8.10/reference/#_jacoco
+  

@@ -1,0 +1,126 @@
+GraalVM notes
+
+https://www.oracle.com/au/java/technologies/downloads/#graalvmjava21-windows
+https://www.graalvm.org/
+https://docs.oracle.com/en/graalvm/jdk/21/docs/getting-started/installation-windows/#start-using-native-image
+https://medium.com/graalvm/graalvm-quick-reference-b8d1dfe24241
+
+
+annual review mid-year review half-year review notes
+
+# list commits
+
+git log --author="xxx" --since=2023-01-01 --oneline > c:\temp\commits.txt
+
+- remove commit sha (column-select (alt-mouse) and then delete
+- extract JIRA keys (paste output into Notepad++, column select (alt-mouse)
+- paste into Excel
+- remove duplicates
+- copy
+- horizontal paste
+- copy
+- paste into Notepad++
+- replace space/tab with ,<space>
+ 
+
+key in (...) order by fixVersion 
+
+- export columns to Excel
+- keep key, description, fixVersion
+- insert url column after key column
+- fill url column =CONCAT([https://.../jira/browse/]https://.../jira/browse/,A2)
+- insert *<space> column before url column '*<space>
+- insert one-space column between columns '<space>
+- copy and paste to review comment
+
+
+
+# plant uml - language specification
+
+- see https://plantuml.com/sitemap-language-specification
+ 
+# creole - lightweight wiki markup
+
+- see https://plantuml.com/creole
+
+# all skin parameters
+
+- see https://plantuml-documentation.readthedocs.io/en/latest/formatting/all-skin-params.html
+
+# language reference guide
+
+see https://pdf.plantuml.net/PlantUML_Language_Reference_Guide_en.pdf
+https://isgb.otago.ac.nz/infosci/mark.george/Wiki/wiki/PlantUML%20GraphViz%20Layout
+https://www.uml-diagrams.org/class-reference.html
+ 
+
+Powershell (self)
+
+$env:JAVA_HOME = "\path\to\jdk-17.0.3+7"
+$env:PLANTUML_HOME = "\path\to\plantuml"
+$env:PLANTUML_DOCS_HOME = "path\to\docs\home"
+cd $env:PLANTUML_DOCS_HOME
+& "$env:JAVA_HOME\bin\java.exe" -jar $env:PLANTUML_HOME\plantuml-1.2023.10.jar
+
+ 
+
+Mockito
+
+https://site.mockito.org/ 
+
+https://www.toptal.com/java/a-guide-to-everyday-mockito
+https://dzone.com/refcardz/mockito
+https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html
+https://github.com/mockito/mockito/blob/main/src/main/java/org/mockito/Mockito.java
+
+
+JUnit
+
+https://junit.org/junit4/
+https://junit.org/junit5/docs/current/user-guide/
+ 
+
+AssertJ
+
+https://assertj.github.io/doc/
+https://www.javadoc.io/doc/org.assertj/assertj-core/latest/index.html
+https://www.javadoc.io/doc/org.assertj/assertj-core/latest/org/assertj/core/api/Assertions.html
+http://joel-costigliola.github.io/assertj/
+https://mvnrepository.com/artifact/org.assertj/assertj-core
+
+
+Visual Studio Code
+
+With extensions outside default location
+
+path\to\Code.exe --extensions-dir path\to\new\location\of\.vscode\extensions
+ 
+
+Java
+
+Threading notes
+
+https://www.educative.io/courses/java-multithreading-for-senior-engineering-interviews/RLg4O1VYJ3w
+ 
+
+When picking up a JIRA starts a notes or investigation text file and put it in Documents
+
+ 
+For Nexus, we need to have the CA certificate installed in our Java version
+
+set JAVA_HOME="\path\to\jdk-17.0.3+7"
+set JAVA_HOME="\path\to\jdk-18.0.2.1"
+set JAVA_HOME="c:\dev\tools\jdk-21.0.1+12"
+set CA_CERT_PATH="\path\to\certfile.cer
+
+%JAVA_HOME%\bin\keytool.exe -delete -alias alias-name -keystore %JAVA_HOME%\lib\security\cacerts -storepass changeit
+
+%JAVA_HOME%\bin\keytool -importcert -alias alias-name -file %CA_CERT_PATH% -keystore %JAVA_HOME%\lib\security\cacerts -storepass changeit
+
+ 
+
+Feature toggle investigation
+
+This library/framework looks good
+
+https://www.togglz.org/documentation/advanced-config.html

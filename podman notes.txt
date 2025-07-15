@@ -1,0 +1,53 @@
+# podman notes
+- https://podman.io/
+- https://podman-desktop.io/docs/intro
+
+# remote container development with visual studio code and podman
+- https://developers.redhat.com/articles/2023/02/14/remote-container-development-vs-code-and-podman#
+
+
+
+Building an image
+- https://docs.podman.io/en/latest/markdown/podman-build.1.html
+- https://github.com/containers/common/blob/main/docs/Containerfile.5.md
+
+
+# POSTGRESQL
+- https://github.com/docker-library/docs/blob/master/postgres/README.md
+- https://hub.docker.com/_/postgres
+- https://www.postgresql.org/docs/current/
+
+
+mkdir /home/core/postgres-data
+
+podman ... -v /home/core/postgres-data:/var/lib/postgresql/data:z
+
+
+export IMAGE_NAME=postgres:bookworm
+export CONTAINER_NAME=postgres_one
+export DATA_PATH=/home/core/postgres-data
+export NETWORK_NAME=podman
+export POSTGRES_USER=postgres
+export POSTGRES_PASSWORD=postgres
+
+# NOTE the ":Z" on the volume mapping. See,
+- https://web.archive.org/web/20190728100417/https://www.projectatomic.io/blog/2015/06/using-volumes-with-docker-can-cause-problems-with-selinux/
+- https://stackoverflow.com/questions/24288616/permission-denied-on-accessing-host-directory-in-docker
+- https://github.com/docker-library/postgres/issues/116
+
+podman run --name ${CONTAINER_NAME} --network ${NETWORK_NAME} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -e POSTGRES_USER=${POSTGRES_USER} -e PGDATA=/var/lib/postgresql/data/pgdata -v ${DATA_PATH}:/var/lib/postgresql/data:Z  -d ${IMAGE_NAME}
+
+podman logs ${CONTAINER_NAME}
+
+export CONTAINER_IP=$(podman inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CONTAINER_NAME})
+
+podman run -it --rm --network ${NETWORK_NAME} ${IMAGE_NAME} psql -h ${CONTAINER_IP} -U ${POSTGRES_USER}
+
+
+podman stop ${CONTAINER_NAME}
+podman rm ${CONTAINER_NAME}
+
+
+podman run -i --rm postgres:bookworm cat /usr/share/postgresql/postgresql.conf.sample | less
+
+/^[a-zA-Z]

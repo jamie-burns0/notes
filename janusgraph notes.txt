@@ -1,0 +1,164 @@
+sudo apt update
+sudo apt full-upgrade
+sudo apt install -y docker.io
+
+sudo docker network create -d bridge graphdb_bridge
+sudo docker network ls
+sudo docker network inspect graphdb_bridge
+
+sudo docker pull cassandra:latest
+sudo docker pull janusgraph/janusgraph:latest
+
+# start Cassandra
+- change -it (run interactively in foreground) to -d (run as daemon in background)
+- if running JanusGraph in another container on the same host, we should not need the port mappings. 
+  For now, let's leave them as is so that this command will work if we have containers on different
+  hosts.
+
+sudo docker run -it --name cassandra --net=graphdb_bridge -p 7001:7001 -p 7199:7199 -p 9042:9042 -p 9160:9160 -v /var/lib/cassandra:/var/lib/cassandra cassandra:latest
+
+sudo docker start cassandra
+
+sudo docker exec -it cassandra /bin/bash
+
+
+
+# start JanusGraph Server
+change -it (run interactively in foreground) to -d (run as daemon in background)
+
+WSL2
+
+sudo docker run -it --name janusgraph --net=graphdb_bridge -p 8182:8182 janusgraph/janusgraph:latest
+sudo docker run -it --name janusgraph --net=graphdb_bridge -p 8182:8182 -e JANUS_PROPS_TEMPLATE=cql janusgraph/janusgraph:latest
+
+
+/opt/janusgraph/conf/janusgraph-server.yaml
+
+sudo docker start -i janusgraph
+
+
+Command Prompt
+
+(Gremlin server)
+
+set JAVA_HOME=c:\dev\tools\jdk-21.0.2+13
+set JAVA_HOME=c:\dev\tools\jdk-16.0.2
+set JANUSGRAPH_HOME=c:\dev\tools\janusgraph-1.0.0
+
+set Path=%JAVA_HOME%\bin;%Path%
+
+REM set GREMLIN_SERVER_YAML_FILE=%JANUSGRAPH_HOME%\conf\gremlin-server\gremlin-server-configuration.yaml
+set GREMLIN_SERVER_YAML_FILE=%JANUSGRAPH_HOME%\conf\gremlin-server\gremlin-server-my-graphs.yaml
+REM set GREMLIN_SERVER_YAML_FILE=%JANUSGRAPH_HOME%\conf\gremlin-server\gremlin-server.yaml
+
+cd %JANUSGRAPH_HOME%\bin
+
+.\gremlin-server.bat %GREMLIN_SERVER_YAML_FILE%
+
+
+
+# start JanusGraph Gremlin
+- https://dkuppitz.github.io/gremlin-cheat-sheet/101.html
+- https://gist.github.com/jeremysears/3ceada192827983837ee1551c50688c7
+
+
+WSL2
+
+sudo docker run --rm --net=graphdb_bridge --link janusgraph:janusgraph -e GREMLIN_REMOTE_HOSTS=janusgraph -it janusgraph/janusgraph:latest ./bin/gremlin.sh
+
+:remote connect tinkerpop.server conf/remote.yaml session
+:remote console
+
+
+Command prompt
+
+
+set JAVA_HOME=c:\dev\tools\jdk-21.0.2+13
+set JAVA_HOME=c:\dev\tools\jdk-16.0.2
+set JANUSGRAPH_HOME=c:\dev\tools\janusgraph-1.0.0
+set Path=%JAVA_HOME%\bin;%Path%
+
+cd %JANUSGRAPH_HOME%\bin
+
+.\gremlin.bat
+
+:remote connect tinkerpop.server conf/remote.yaml session
+:remote console
+
+
+preloaded traversals
+
+conf/gremlin-server/gremlin-server-my-graphs.yaml
+...
+graphs: {
+  graph: conf/janusgraph-inmemory.properties,
+  ConfigurationManagementGraph: conf/janusgraph-cql-configurationgraph.properties,
+  pbrgraph: conf/janusgraph-cql-pbrgraph.properties,
+  gardengraph: conf/janusgraph-cql-gardengraph.properties
+}
+...
+scriptEngines: {
+  gremlin-groovy: {
+    plugins: { ...,
+               org.apache.tinkerpop.gremlin.jsr223.ScriptFileGremlinPlugin: {files: [scripts/empty-sample.groovy]}}}}
+
+scripts/empty-sample.groovy
+...
+// define the default TraversalSource to bind queries to - this one will be named "g".
+globals << [g : graph.traversal(), g_garden : gardengraph.traversal(), g_pbr : pbrgraph.traversal()]
+...
+
+
+
+
+graph = JanusGraphFactory.open('conf/janusgraph-cql.properties')
+
+
+v = graph.addVertex( "plant" )
+v.property('name', 'Grevillia')
+
+graph.tx().commit()
+
+graph.query().has('name','Grevillia').vertices()
+
+
+g = graph.traversal()
+
+g.addV().property("name", "Kangaroo Paw")
+
+graph.tx().commit()
+
+g.V().has("name", "Kangaroo Paw")
+
+
+g.addV().property("name", "abc")
+graph.tx().rollback()
+g.V().has("name", "abc")
+
+
+m = graph.openManagement()
+
+m.getVertexLabels()
+
+m.makeVertexLabel( "plant" ).make()
+m.makeVertexLabel( "type" ).make()
+m.makeVertexLabel( "location" ).make()
+m.makeVertexLabel( "locality" ).make()
+// other vertices
+// light, water, height, width,...
+
+// plant relationships
+
+// plant is of type ...
+m.makeEdgeLabel( "is-of-type" ).directed().multiplicity( SIMPLE ).make()
+
+// plant is located-at a location
+m.makeEdgeLabel( "located-at" ).directed().multiplicity( SIMPLE ).make()
+
+// location relationships
+
+// location is found-in locality
+m.makeEdgeLabel( "found-in" ).directed().multiplicity( SIMPLE ).make()
+
+
+m.printSchema()

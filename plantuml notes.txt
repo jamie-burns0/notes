@@ -1,0 +1,135 @@
+plantuml notes
+- AWS support, see https://github.com/awslabs/aws-icons-for-plantuml
+- Standard library, see https://plantuml.com/stdlib
+- Colours, see https://plantuml.com/color
+
+"c:\dev\tools\jdk-21.0.2+13\bin\java.exe" -jar c:\dev\tools\plantuml\plantuml-1.2024.5.jar quicksort-react-tech-stack.puml
+
+State diagram
+
+hide empty description
+
+state "Running\n(Loading) as Running : pausable\nstoppable
+state "Idling\n(Counting down)" as Idling : runnable\nstoppable
+state Paused : resumable\nstoppable
+state "Stopped\n(Done)" as Stopped\n
+
+state refreshable <<choice>>
+
+[*] --> Running : generate
+
+Running -r-> Paused : pause
+Running -d-> Stopped : stop
+Running -l-> refreshable : loaded
+
+...
+
+refreshable -l-> Idling : [refreshable]
+refreshable -d-> Stopped : [non-refreshable]
+
+Stopped --> [*] : close
+
+
+
+Class diagram
+
+hide empty members
+
+abstract class ABC implements XYZ
+class "d:DEF" as DEF_d extends ABC
+
+class GHI extends ABC
+{
+	#someMethod(...)
+	~anotherMethod(...)
+}
+note top
+	some notes
+	...
+end note
+
+ABC -[#magenta]-> GHI : **<color:magenta><<creates>></color>**
+
+circle " " as START1
+note top : this is how we ...
+
+START1 --> ABC #line:green;text:green : 1 someMethod()
+ABC --> DEF_d #line:green;text:green : 1.1 anotherMethod()
+
+class JKL <<singleton>>/<<factory>> #pink
+
+GHI --> JKL : <<uses>>
+note on link : this is for ...
+
+ABC --> "*" DEF_d : <<builds>>
+
+DEF_d --> "ghiMember" GHI
+
+class "..." as OtherABCImplmentations
+class MNO #pink extends ABC
+
+PQR <|- STU
+PQR -[hidden]-> STU
+
+note "shared note" as N1
+
+PQR .. N1
+N1 .. STU
+power
+
+
+
+
+
+
+
+
+
+Sequence diagram
+
+skinparam style strictuml
+hide footbox
+
+participant ABC
+?-> ABC : methodA("xyz")
+
+participant DEF
+note over DEF
+	line 1
+	line 2
+end note
+create DEF
+
+ABC -> DEF : new()
+
+participant "g:GHI" as GHI_g
+
+DEF -> GHI_g
+
+activate ABC
+activate DEF
+activate GHI_g
+...
+return g
+deactivate
+deactivate ABC
+
+
+note over GHI_g
+	some time later
+	...
+end note
+
+note over GHI_g
+	Why does ...
+	...
+end note
+
+group have crowd attention
+	...
+end
+
+?<-- ABC : return
+
+participant "..." as placeholder1
+?--> placeholder1 : x()

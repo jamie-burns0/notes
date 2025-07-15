@@ -1,0 +1,31 @@
+# qemu notes
+- https://www.qemu.org/
+- https://wiki.qemu.org/Documentation#For_users
+- https://www.qemu.org/docs/master/tools/qemu-img.html
+- https://wiki.gentoo.org/wiki/QEMU/Options
+
+- https://ict4g.net/adolfo/notes/admin/qemu-virtual-machines.html
+
+
+# The Alpine desktop environment under QEMU is slower than VirtualBox
+# Neither QEMU or VirtualBox support nested virtualization under Windows
+# So when we just need a VM to play with, let's use VirtualBox
+
+
+$env:VM_NAME="alpine-desktop4"
+$env:VM_HOME="c:\dev\work\virtual-machines"
+$env:QEMU_HOME="c:\dev\tools\qemu"
+
+mkdir -p $env:VM_HOME\$env:VM_NAME
+& $env:QEMU_HOME\qemu-img create -f vhdx $env:VM_HOME\$env:VM_NAME\$env:VM_NAME.vhdx 20G
+& $env:QEMU_HOME\qemu-system-x86_64.exe -m 2G -cdrom C:\dev\work\alpine-virt-3.19.1-x86_64.iso -drive file=$env:VM_HOME\$env:VM_NAME\$env:VM_NAME.vhdx -boot order=d
+
+setup-alpine
+
+# power down
+
+& $env:QEMU_HOME\qemu-system-x86_64.exe -m 2G -nic user,hostfwd=tcp::1022-:22 $env:VM_HOME\$env:VM_NAME\$env:VM_NAME.vhdx
+
+su - root
+setup-desktop
+reboot

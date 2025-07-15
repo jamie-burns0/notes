@@ -1,0 +1,57 @@
+# PowerShell as self
+
+wsl ~ -d Ubuntu
+sudo dockerd
+
+# install live zaproxy 
+
+https://www.zaproxy.org/docs/docker/about/
+ 
+
+https://www.zaproxy.org/docs/automate/automation-framework/
+https://www.zaproxy.org/docs/desktop/addons/automation-framework/job-ascan/
+https://www.zaproxy.org/docs/desktop/addons/openapi-support/
+https://owasp.org/www-chapter-belgium/assets/2021/2021-04-15/ZAP-Intro-and-latest.pdf
+https://www.zaproxy.org/docs/alerts/
+
+https://owasp.org/www-project-zap/
+https://www.zaproxy.org/download/ 
+
+https://docs.docker.com/engine/reference/commandline/image_ls/
+ 
+
+# PowerShell as self
+
+wsl ~ -d Ubuntu
+export ZAP2DOCKER_IMAGE_NAME="owasp/zap2docker-bare"
+docker pull $ZAP2DOCKER_IMAGE_NAME
+ 
+
+# PowerShell as self 
+
+# NOTE: $(pwd) is the current directory which is likely to be /home/... or ~ 
+
+wsl ~ -d Ubuntu
+export ZAP2DOCKER_IMAGE_NAME="owasp/zap2docker-bare"
+container_id2=$(docker run -it --rm --detach -v "$(pwd):/zap/wrk/:rw" -t $ZAP2DOCKER_IMAGE_NAME)
+
+docker exec -it $container_id2 /bin/bash
+docker stop $container_id2
+
+zap.sh -cmd -openapifile /zap/wrk/openapi.yaml -script "/zap/scripts/templates/active/Active default template.js" -quickurl https://.../api/v1 -quickout "/zap/wrk/zap-report-$(date +'%s').json"
+
+zap.sh -cmd -quickurl https://.../api/v1
+zap.sh -cmd -openapifile /zap/wrk/openapi.yaml
+zap.sh -cmd -autogenmin /zap/wrk/autogenmin2.yaml
+zap.sh -cmd --help
+
+docker run -v $(pwd):/zap/wrk/:rw -t $ZAP2DOCKER_IMAGE_NAME bash -c "zap.sh -cmd -autogenmin /zap/wrk/autogenmin.yaml"
+docker run -v $(pwd):/zap/wrk/:rw -t $ZAP2DOCKER_IMAGE_NAME bash -c "zap.sh -cmd -autorun /zap/wrk/autogenmin.yaml"
+
+# files from first investigation are on ubuntu at /mnt/c/dev/zap
+
+cp /mnt/c/dev/zap/* $(pwd) 
+
+docker run -v $(pwd):/zap/wrk/:rw -t $ZAP2DOCKER_IMAGE_NAME bash -c "zap.sh -cmd -addonupdate"
+docker run -v $(pwd):/zap/wrk/:rw -t $ZAP2DOCKER_IMAGE_NAME touch /zap/wrk/test.txt
+docker run -u zap -p 8080:8080 -p 8090:8090 -i $ZAP2DOCKER_IMAGE_NAME zap-webswing.sh

@@ -1,0 +1,202 @@
+nodejs
+- https://nodejs.org/en
+
+https://code.visualstudio.com/docs/nodejs/nodejs-tutorial
+https://code.visualstudio.com/docs/typescript/typescript-tutorial
+
+https://code.visualstudio.com/docs/nodejs/nodejs-debugging
+
+https://stackoverflow.com/questions/44700432/visual-studio-code-to-use-node-version-specified-by-nvm
+https://www.linode.com/docs/guides/how-to-install-use-node-version-manager-nvm/
+
+https://www.apollographql.com/docs/apollo-server/getting-started
+
+
+wsl --import kali-node-wsl C:\dev\work\virtual-machines\kali-node-wsl C:\dev\work\templates\kali-linux-base-20240430-2233.tar
+
+wsl ~ -d kali-node-wsl -e zsh
+
+sudo apt update
+sudo apt full-upgrade
+
+mkdir -m700 ~/.ssh
+
+tee -a ~/.ssh/config > /dev/null <<EOT
+Host github.com
+  IdentityFile /home/jamie/.ssh/id_ed25519
+EOT
+
+chmod 600 ~/.ssh/config
+cp /mnt/c/users/jamie/.ssh/id_ed25519 /home/jamie/.ssh/id_ed25519
+chmod 600 /home/jamie/.ssh/id_ed25519
+
+
+git config --global user.name "jamie"
+git config --global user.email "jamie@jamieburns.me"
+git config --global pull.ff only
+git config --global alias.slog "log --graph --all --topo-order --decorate --oneline"
+
+
+
+To install nvm
+- see https://github.com/nvm-sh/nvm
+
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+nvm install --lts
+
+
+To update nvm to latest version
+- see https://github.com/nvm-sh/nvm
+
+cd ~/.nvm
+git fetch
+git checkout <latest version>
+restart the shell
+nvm --version
+
+
+Install typescript
+
+- show latest available version
+npm show typescript version
+
+- show installed versions
+npm ls typescript
+
+npm install -g typescript
+npm install typescript@latest --save-dev
+
+
+
+mkdir -p ~/dev/work ~/dev/projects/node1
+
+# make a typical typescript project structure
+
+cd ~/dev/projects/node1
+
+
+### existing project
+
+cd ~/dev/projects/node1
+git clone git@github.com:jamie-burns0/node.git .
+git checkout node1
+
+npm install
+npm start
+
+code .
+
+
+### new project
+
+mkdir -p src/{controllers,models,routes,services,utils} test
+touch src/app.ts .env .gitignore package.json tsconfig.json README.md
+
+
+tee -a ./package.json > /dev/null <<EOT
+{
+    "scripts": {
+    "compile": "tsc",
+    "start": "npm run compile && node ./dist/app.js"
+  }
+}
+EOT
+
+npm pkg set type="module"
+npm install --save-dev @apollo/server@4.10.4 @types/node@20.12.11 graphql@16.8.1 typescript@5.4.5
+
+tee -a ./tsconfig.json > /dev/null <<EOT
+{
+    "compilerOptions": {
+        "rootDirs": [
+            "./src"
+        ],
+        "outDir": "./dist",
+        "strict": true,
+        "sourceMap": true,
+        "target": "es2022",
+        "lib": [
+            "es2022"
+        ],
+        "module": "esnext",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "types": [
+            "node"
+        ],
+    }
+}
+EOT
+
+git init
+
+tee -a .gitignore > /dev/null <<EOT
+package-lock.json
+dist
+node_modules
+EOT
+
+git add .
+git commit -m "initial commit"
+git remote add origin git@github.com:jamie-burns0/node.git
+git push -u origin master:node1
+
+### end new project
+
+# with podman
+
+sudo apt install podman
+
+podman build -f Dockerfile -t learn-typescript
+podman run -p 4001:4000 learn-typescript
+podman ps
+podman exec -it <container-name> /bin/shnode
+
+
+
+
+
+
+
+# launch.json
+
+{
+"version": "<some-version>",
+"configurations": [
+    {
+        "type": "node",
+        "runtimeVersion": "4.8.7", // If i need to run node 4.8.7
+        "request": "launch",
+        "name": "Launch",
+        "program": "${workspaceFolder}/app.ts"
+    }
+]}
+
+
+
+
+# installing a single version without using nvm
+
+sudo apt install xz-utils
+
+export NODE_VERSION=20.13.1
+wget https://nodejs.org/dist/v20.13.1/node-v${NODE_VERSION}-linux-x64.tar.xz -P /tmp
+sudo mkdir -p /opt/node
+sudo tar -xvz -f /tmp/node-v${NODE_VERSION}-linux-x64.tar.xz -C /opt/node
+sudo ln -s /opt/node/node-v${NODE_VERSION}-linux-x64 /opt/node/latest
+
+echo "export NODE_HOME=/opt/node/latest" | sudo tee /etc/profile.d/node.sh
+
+sudo chmod +x /etc/profile.d/node.sh
+source /etc/profile.d/node.sh
+
+export PATH="${NODE_HOME}/bin:$PATH"
+
+
+
+

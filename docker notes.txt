@@ -1,0 +1,15 @@
+# docker notes
+
+
+# docker desktop in wsl2
+- https://docs.docker.com/desktop/wsl/
+
+
+# docker engine
+- https://docs.docker.com/engine/
+
+
+
+
+# containerize a nodejs application
+- https://docs.docker.com/language/nodejs/containerize/

@@ -1,0 +1,28 @@
+Fedora CoreOS notes
+
+
+
+Getting DNF to work
+- "dnf: command not found"
+- see https://www.reddit.com/r/Fedora/comments/1bbx2si/comment/kuc9iq9/
+- see https://docs.fedoraproject.org/en-US/fedora-coreos/os-extensions/
+- https://discussion.fedoraproject.org/t/fedora-coreos-comes-without-dnf-installed/115524
+
+re the os-extensions and fedora-coreos-comes-without-dnf-installed links above, fedora coreos does not come with DNF install. Fedora CoreOS is optimised for containerised workloads. 
+
+Fedora CoreOS keeps itself up to date.
+
+If we wanted Python3, we would use a container instead of installing Python3. 
+
+However, if we really want to or need to install Python3, we would use rpm-ostree,
+
+sudo rpm-ostree install python3
+sudo rpm-ostree remove python3
+
+
+
+PostgreSQL
+- https://hub.docker.com/_/postgres
+- https://developer.fedoraproject.org/tech/database/postgresql/about.html
+- https://github.com/fedora-cloud/Fedora-Dockerfiles/tree/master/postgresql
+

@@ -1,0 +1,15 @@
+Having settled on and implemented a strategy of breaking the work into two phases, it was time to look at performance.
+
+In iteration 1, I had been performing expensive grouping and regrouping of files - converting maps of lists to other maps of lists. This was replaced by successively partitioning my list of files using `Collectors.partitioningBy(...)`. On each partition, one list was turned into actions, while the other, now smaller list, was repartitioned on a new criteria. So now, we are just slicing the list in two and working on the slice that remains.
+
+The storage device is wired into my home network but is accessed over the home wireless network. Accessing a lot of files over the wireless network is going to be slow. Any performance gain here is going to help. I was happy with my code to walk the folder tree. However, I remembered the Files class took some time to dig around. 
+
+I only wanted to know three things about a file -  name, path and size. `Files.walk(...)`, says, "Returns a Stream that is __lazily__ populated with `Path`...". I had been walking the tree with `File::listFiles`. Maybe more was being returned for each File object than would be returned by a Path object - the methods on File tell me more about the file than the methods on Path. Reinforcing this idea, I found `Files.readAttributes(Path, attribute...)` which would let me get only the size attribute of the file represented by the Path.
+
+These changes significantly improved the time to capture the data I needed for each file. A folder with around 2000 images is now read in half the time.
+
+
+
+
+- prepare a list of actions
+- execute the list of actions

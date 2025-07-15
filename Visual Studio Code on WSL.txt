@@ -1,0 +1,280 @@
+Visual Studio Code on WSL
+
+$env:DISTRO_NAME="kali-linux"
+
+wsl --install --distribution $env:DISTRO_NAME
+
+sudo usermod --shell $(which zsh) $(whoami)
+
+echo [boot] | sudo tee -a /etc/wsl.conf
+echo systemd=true | sudo tee -a /etc/wsl.conf
+echo [user] | sudo tee -a /etc/wsl.conf
+echo default=$(whoami) | sudo tee -a /etc/wsl.conf
+
+mkdir -m700 ~/.ssh
+
+tee -a ~/.ssh/config > /dev/null <<EOT
+Host github.com
+  IdentityFile /home/jamie/.ssh/id_ed25519
+EOT
+
+chmod 600 ~/.ssh/config
+
+cp /mnt/c/users/jamie/.ssh/id_ed25519 /home/jamie/.ssh/id_ed25519
+
+chmod 600 /home/jamie/.ssh/id_ed25519
+
+exit
+
+wsl --terminate $env:DISTRO_NAME
+wsl ~ -d $env:DISTRO_NAME -e zsh
+
+sudo apt update && sudo apt full-upgrade
+
+# fixes issue, https://github.com/redhat-developer/vscode-java/issues/3634#issuecomment-2253808580
+
+sudo mkdir /run/user/1000
+sudo chown 1000:1000 /run/user/1000
+sudo chmod 0700 /run/user/1000
+
+sudo chown 1000:1000 /run/user/1000 && sudo chmod 0700 /run/user/1000
+
+
+git config --global user.name "jamie"
+git config --global user.email "jamie@jamieburns.me"
+git config --global pull.ff only
+git config --global alias.slog "log --graph --all --topo-order --decorate --oneline"
+
+
+
+exit
+
+
+$env:DISTRO_NAME="kali-documents-wsl"
+
+wsl --terminate $env:DISTRO_NAME
+
+$timestamp = Get-Date -Format "yyyyMMdd-HHmm"
+wsl --export $env:DISTRO_NAME c:\dev\work\templates\$env:DISTRO_NAME-base-$timestamp.tar
+
+
+$env:VM_NAME="kali-java-wsl"
+
+wsl --import $env:VM_NAME C:\dev\work\virtual-machines\$env:VM_NAME c:\dev\work\templates\$env:DISTRO_NAME-base-$timestamp.tar
+
+# use this example
+
+$timestamp="20240430-2233"
+$env:DISTRO_NAME="kali-linux"
+$env:VM_NAME="kali-python-wsl"
+
+wsl --import $env:VM_NAME C:\dev\work\virtual-machines\$env:VM_NAME c:\dev\work\templates\$env:DISTRO_NAME-base-$timestamp.tar
+
+
+$timestamp = Get-Date -Format "yyyyMMdd-HHmm"
+$env:VM_NAME="kali-python-wsl"
+wsl --export $env:VM_NAME c:\dev\work\templates\$env:VM_NAME-base-$timestamp.tar
+
+
+
+wsl ~ -d $env:VM_NAME -e zsh
+
+
+$timestamp="20240508-1748"
+$vm_name="kali-java-wsl"
+
+$timestamp="20240510-1545"
+$vm_name="kali-node-wsl"
+
+wsl --import $vm_name c:\dev\work\virtual-machines\$vm_name c:\dev\work\templates\$vm_name-base-$timestamp.tar
+
+
+wsl ~ -d $vm_name -e zsh
+
+
+Java
+- https://kilishek.com/2021/05/05/installing-java-openjdk-from-tar-gz-archive-and-update-the-default-jdk-used/
+- https://openjdk.org/install/
+- https://jdk.java.net/22/
+
+export JAVA_VERSION=21.0.2
+export JAVA_DOWNLOAD_URL=https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz
+
+export JAVA_VERSION=jdk-22.0.2
+export JAVA_DOWNLOAD_FILENAME=openjdk-22.0.2_linux-x64_bin.tar.gz
+export JAVA_DOWNLOAD_URL=https://download.java.net/java/GA/jdk22.0.2/c9ecb94cd31b495da20a27d4581645e8/9/GPL/$JAVA_DOWNLOAD_FILENAME
+
+export JAVA_VERSION=graalvm-jdk-22.0.2+9.1
+export JAVA_DOWNLOAD_FILENAME=graalvm-jdk-22_linux-x64_bin.tar.gz
+export JAVA_DOWNLOAD_URL=https://download.oracle.com/graalvm/22/latest/$JAVA_DOWNLOAD_FILENAME
+
+export JAVA_VERSION=jdk-23
+export JAVA_DOWNLOAD_FILENAME=jdk-23_linux-x64_bin.tar.gz
+export JAVA_DOWNLOAD_URL=https://download.oracle.com/java/23/latest/${JAVA_DOWNLOAD_FILENAME}
+
+export JAVA_VERSION=graalvm-jdk-23+37.1
+export JAVA_DOWNLOAD_FILENAME=graalvm-jdk-23_linux-x64_bin.tar.gz
+export JAVA_DOWNLOAD_URL=https://download.oracle.com/graalvm/23/latest/${JAVA_DOWNLOAD_FILENAME}
+
+
+wget ${JAVA_DOWNLOAD_URL} -P /tmp
+sudo mkdir -p /opt/java
+sudo tar xvf /tmp/${JAVA_DOWNLOAD_FILENAME} -C /opt/java
+sudo ln -vfns /opt/java/${JAVA_VERSION} /opt/java/latest
+
+echo "# export JAVA_HOME=/opt/java/latest" | sudo tee /etc/profile.d/java.sh
+
+sudo chmod +x /etc/profile.d/java.sh
+source /etc/profile.d/java.sh
+
+
+Gradle
+- https://linuxize.com/post/how-to-install-gradle-on-ubuntu-20-04/
+
+sudo apt install unzip
+
+export GRADLE_VERSION=8.7
+export GRADLE_VERSION=8.9
+export GRADLE_VERSION=8.10
+export GRADLE_VERSION=8.10.1
+export GRADLE_VERSION=8.12
+
+wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip -P /tmp
+sudo unzip -d /opt/gradle /tmp/gradle-${GRADLE_VERSION}-bin.zip
+sudo ln -vfns /opt/gradle/gradle-${GRADLE_VERSION} /opt/gradle/latest
+
+echo "# export GRADLE_HOME=/opt/gradle/latest" | sudo tee /etc/profile.d/gradle.sh
+
+sudo chmod +x /etc/profile.d/gradle.sh
+source /etc/profile.d/gradle.sh
+
+
+VisualVM
+Although we can install VisualVM on Kali Linux, it wasn't any use. Running VisualVM on our GUI-less Linux distro is not going to give us the visual part. This also means there is no value in installing the VisualVM extension in VSC. See VisualVM.txt for more notes.
+
+- https://visualvm.github.io/
+
+export VISUALVM_VERSION_LONG=2.1.9
+export VISUALVM_VERSION_SHORT=219
+
+export VISUALVM_ZIP_FILENAME=visualvm_${VISUALVM_VERSION_SHORT}.zip
+
+wget https://github.com/oracle/visualvm/releases/download/${VISUALVM_VERSION_LONG}/${VISUALVM_ZIP_FILENAME} -P /tmp
+
+sudo unzip -d /opt/visualvm /tmp/${VISUALVM_ZIP_FILENAME}
+sudo ln -vfns /opt/gradle/visualvm-${VISUALVM_VERSION_SHORT} /opt/visualvm/latest
+
+
+VSC settings
+
+mkdir -p ~/dev/projects
+mkdir -p ~/dev/work
+
+mkdir -p ~/.vscode-server/data/Machine
+
+tee -a ~/.vscode-server/data/Machine/settings.json > /dev/null <<EOT
+{
+    "java.jdt.ls.java.home": "/opt/java/jdk-${JAVA_VERSION}",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "/opt/java/jdk-${JAVA_VERSION}",
+            "default": true
+        }
+    ],
+    "files.autoSave": "afterDelay",
+    "java.import.gradle.wrapper.enabled": false,
+    "java.import.gradle.home": "/opt/gradle/gradle-${GRADLE_VERSION}",
+    "java.import.gradle.java.home": "/opt/java/jdk-${JAVA_VERSION}",
+    "java.import.gradle.user.home": "/home/${USER}/dev/work"
+}
+EOT
+
+# WARNING - this is shared by ***ALL*** vscode instances ***EVERYWHERE***
+# We only need to do this if keybindings.json does not exist in the location below.
+
+tee -a /mnt/c/Users/Jamie/AppData/Roaming/Code/User/keybindings.json > /dev/null <<EOT
+// Place your key bindings in this file to override the defaults
+[
+    {
+        "key": "ctrl+\\",
+        "command": "editor.action.inlineSuggest.trigger",
+        "when": "config.github.copilot.inlineSuggest.enable && editorTextFocus && !editorHasSelection && !inlineSuggestionsVisible"
+    },
+    {
+        "key": "ctrl+\\",
+        "command": "-workbench.action.splitEditor"
+    },
+    {
+        "key": "ctrl+i",
+        "command": "-toggleSuggestionDetails",
+		"when": "suggestWidgetHasFocusedSuggestion && suggestWidgetVisible && textInputFocus"
+    },
+    {
+        "key": "ctrl+i",
+        "command": "-focusSuggestion",
+        "when": "suggestWidgetVisible && textInputFocus && !suggestWidgetHasFocusedSuggestion"
+    },
+    {
+        "key": "ctrl+/",
+        "command": "-toggleExplainMode",
+        "when": "suggestWidgetVisible"
+    },
+    {
+        "key": "ctrl+/",
+        "command": "hideSuggestWidget",
+        "when": "suggestWidgetVisible && textInputFocus"
+    },
+    {
+        "key": "shift+escape",
+        "command": "-hideSuggestWidget",
+        "when": "suggestWidgetVisible && textInputFocus"
+    }
+]
+EOT
+
+wsl --terminate $env:VM_NAME
+
+$timestamp = Get-Date -Format "yyyyMMdd-HHmm"
+wsl --export $env:VM_NAME c:\dev\work\templates\$env:VM_NAME-base-$timestamp.tar
+
+wsl --export kali-java-wsl2 c:\dev\work\templates\kali-java-wsl-base-$timestamp.tar
+
+
+wsl ~ -d $env:VM_NAME -e zsh
+
+
+
+
+Install java on ubuntu
+- steps below from Copilot
+
+sudo apt install openjdk-21-jdk
+java --version
+
+sudo tee -a /etc/environment > /dev/null <<EOT
+JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+EOT
+
+source /etc/environment
+echo $JAVA_HOME
+
+
+- https://computingforgeeks.com/install-java-jdk-21-openjdk-21-on-ubuntu/
+# this didn't work. Failed when running jdk22.sh
+
+wget https://download.java.net/java/GA/jdk22.0.2/c9ecb94cd31b495da20a27d4581645e8/9/GPL/openjdk-22.0.2_linux-x64_bin.tar.gz
+
+tar xvf openjdk-22.0.2_linux-x64_bin.tar.gz
+
+sudo mv jdk-22.0.2 /usr/local/
+
+sudo tee -a /etc/profile.d/jdk22.sh > /dev/null <<EOT
+export JAVA_HOME=/usr/local/jdk-22.0.2
+export PATH=$PATH:$JAVA_HOME/bin
+EOT
+
+source /etc/profile.d/jdk22.sh
+
+
+

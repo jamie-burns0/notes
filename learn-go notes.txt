@@ -1,0 +1,31 @@
+learn-go notes
+
+
+PowerShell (self)
+
+$project_name = "learn-go"
+
+$go_version = "go-1.24.4"
+
+$projects_home = "c:/dev/projects"
+$tools_home = "c:/dev/tools"
+
+$project_home = "${projects_home}/go/${project_name}"
+$git_home = "${tools_home}/git"
+$vscode_home = "${tools_home}/vscode"
+
+$env:GOROOT = "${tools_home}/${go_version}"
+
+$env:Path = "$env:GOROOT/bin;${git_home}/bin;${vscode_home};" + $env:Path
+
+
+
+-- checkout
+
+cd $projects_home && git clone git@github.com:jamie-burns0/go.git go
+
+
+
+-- code
+
+cd $project_home && code learn-go.code-workspace --profile "Go"

@@ -1,0 +1,23 @@
+VisualVM
+- https://visualvm.github.io/
+
+Although we can install VisualVM on Kali Linux, it wasn't any use. Running VisualVM on our GUI-less Linux distro is not going to give us the visual part. This also means there is no value in installing the VisualVM extension in VSC.
+
+In our case,
+- install VisualVM on the Windows host
+- launch VisualVM on the Windows host
+- build our application jar on the Linux guest
+- launch our application on the Linux guest
+
+
+Command prompt
+
+C:\dev\tools\visualvm_219\bin\visualvm.exe --jdkhome "C:\dev\tools\jdk-22.0.2"
+
+
+wsl
+
+/opt/gradle/gradle-8.9/bin/gradle clean build
+
+/opt/java/jdk-22.0.2/bin/java -Dcom.sun.management.jmxremote=true -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.port=9991 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.registry.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Djava.net.preferIPv4Stack=true -jar ./app/build/libs/app.jar me.jamieburns.CleanApplication
+

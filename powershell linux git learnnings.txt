@@ -1,0 +1,143 @@
+$env:PROJECT_NAME = "project-name"
+
+$Env:JAVA_HOME = "c:\path\to\java
+$Env:MAVEN_HOME = "c:\path\to\maven
+$Env:M2_HOME = "$Env:MAVEN_HOME" 
+
+$env:settings_xml_path = "c:\path\to\settings\.m2\settings.$env:PROJECT_NAME.xml" 
+
+$env:SKIP_TESTS = "true"
+# $env:SKIP_TESTS = "false" 
+
+$Env:Path = "$Env:JAVA_HOME\bin;" + $ENV:Path 
+$Env:MAVEN_BATCH_PAUSE = "on"
+
+cd \path\to\$env:PROJECT_NAME\project-folder
+
+$mavenProcess = Start-Process -FilePath $env:MAVEN_HOME\bin\mvn.cmd -ArgumentList "clean install --settings $env:settings_xml_path -Dmaven.test.skip=true -Dmaven.javadoc.skip=true" -PassThru
+
+Copy-Item -Path “path\to\copy\from\file.txt” -Destination “path\to\copy\to\fileXXX.text”
+
+@”
+Line 1
+Line 2
+Line 3
+“@ | New-Item -Path “path\to\new\file”
+
+“text to add” | Add-Content -Path “path\to\file\to\add\to”
+
+Get-ChildItem -Path .\ -Filter pom.xml -Recurse -File -Name| Select-String -Pattern "ABC"
+
+ 
+
+LINUX
+
+rsync -avrz --ignore-existing –progress user@host:/path/to/source/folder/ mnt/c/path/to/destination/folder/ 
+
+# random alphanumeric generators
+
+tr -cd '[:print:]' < /dev/urandom | fold -w12 | head -n8
+tr -cd '[:alnum:]' < /dev/urandom | fold -w30 | head -n1
+cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 13 ; echo ‘ ‘
+< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;
+openssl rand -base64 9
+
+ 
+find . -name "myfile.ext" -exec vim {} \;
+
+# https://askubuntu.com/questions/147241/execute-sudo-without-password 
+
+echo "$USER ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/$USER
+sudo chmod 440 /etc/sudoers.d/$USER
+
+
+ps aux | grep -e [a]bcd.*mno.*PQR | awk '{print $2}'
+ 
+
+grep -E -A 2 “regex” \path\to\file
+-B for Before
+
+# the <<EOT...EOT things is called heredoc - see https://en.wikipedia.org/wiki/Here_document
+# for example,
+
+tee -a ~/.ssh/config > /dev/null <<EOT
+Host github.com
+  IdentityFile /home/jamie/.ssh/id_ed25519
+EOT
+
+
+Find -path “path/to/*.whatever” -exec grep -Hnie “regex” {} \;
+
+
+
+GIT
+
+- Git internals
+
+https://git-scm.com/book/en/v2/Git-Internals-Plumbing-and-Porcelain
+https://www.freecodecamp.org/news/git-internals-objects-branches-create-repo/
+
+
+- this form has a : after the -L
+
+git log -L:method-name:path/to/file
+
+<start> and <end> are regex
+- NO : after -L
+- this form is useful if our method has anonymous inner classes such as actionPerformed
+
+
+Git log -L /start regex/, /end regex/:path/to/file
+
+<start> and <end> are line numbers
+- NO : after -L
+- because <end> is not provided, we get 1-EOF
+
+git log -L 1,:path/to/file
+
+# bisecting
+
+cd to repository root
+
+git bisect start
+
+git bisect good
+
+git bisect bad
+
+
+git bisect reset
+
+
+
+# squash
+
+git rebase -i HEAD~(number of commits)
+git rebase -i (parent of the last commit you want to edit)
+
+
+# rename a branch
+
+git branch -m <old-name> <new-name>
+ 
+
+# Git notes
+
+- https://initialcommit.com/blog/git-notes#:~:text=Git%20notes%20are%20a%20way,without%20changing%20the%20commit%20itself
+- https://git-scm.com/docs/git-notes
+
+git fetch origin refs/notes/commits:refs/notes/commits
+git notes add -m "this commit also applies to …" cb3a0ad77c
+git push origin refs/notes/commits
+
+
+ 
+git log --patch -G "public class MyClassName" path/to/MyClassName.java
+
+git log --patch -G " myMethodName\(" path/to/MyClass.java
+
+git stash show -p stash@{3} >> /c/temp/stash3-patch.txt
+
+git rev-list --ancestry-path commit1-sha..commit2-sha
+
+git stash --include-untracked

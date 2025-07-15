@@ -1,0 +1,161 @@
+Introduction to Web Application Security Testing with Kali Linux
+
+Ric Messier
+
+https://learning.oreilly.com/videos/introduction-to-web/9781492030881
+
+1 hour
+
+ 
+
+Kali linux on WSL 
+
+https://www.kali.org/docs/wsl/win-kex/#install-kali-linux-in-wsl2
+https://www.kali.org/docs/wsl/
+https://www.kali.org/docs/wsl/wsl-preparations/
+https://www.kali.org/docs/wsl/win-kex/
+ 
+
+open powershell (self)
+
+wsl --list --online
+wsl --install --distribution kali-linux
+
+ 
+
+(1) fix name resolution for sudo apt update - see notes in wsl commands.txt
+
+sudo rm -Rf /etc/resolv.conf
+echo "nameserver ..." | sudo tee /etc/resolv.conf
+echo "nameserver ..." | sudo tee -a /etc/resolv.conf
+...
+
+sudo chattr +i /etc/resolv.conf
+lsattr /etc/resolv.conf
+
+
+(2) fix certificate
+- see Update 2022 at  https://superuser.com/questions/1644520/apt-get-update-issue-in-kali
+- see https://www.huxxit.com/index.php/2021/08/16/kali-apt-get-update-fails-with-signature-error/
+
+wget --no-check-certificate https://http.kali.org/kali/pool/main/k/kali-archive-keyring/kali-archive-keyring_2022.1_all.deb
+sudo dpkg -i kali-archive-keyring_2022.1_all.deb
+rm kali-archive-keyring_2022.1_all.deb
+
+
+in my wsl2 kali-linux i get an error running "sudo apt update". the error is "Err:1 http://mirror.lagoon.nc/kali kali-rolling InRelease Sub-process /usr/bin/sqv returned an error code (1), error message is: Missing key 827C8569F2518CC677FECA1AED65462EC8D5E4C5, which is needed to verify signature."
+
+sudo -E wget https://archive.kali.org/archive-keyring.gpg -O /usr/share/keyrings/kali-archive-keyring.gpg
+
+ 
+
+https://superuser.com/questions/1290764/running-apt-get-update-returns-an-error-apt-secure8
+
+cp /etc/apt/preferences.d/index.html /tmp
+sudo rm -rf /etc/apt/preferences.d/index.html
+cp /etc/apt/sources.list  /tmp
+sudo rm -rf /etc/apt/sources.list
+ 
+
+echo "deb https://http.kali.org/kali kali-rolling main non-free contrib" | sudo tee /etc/apt/sources.list 
+
+echo "deb http://http.kali.org/kali kali-rolling main non-free contrib" | sudo tee /etc/apt/sources.list
+
+ 
+# we can use a mirror directly from kali - this bypasses some of the issues faced with the ones above
+
+curl -sI http://http.kali.org/README
+echo "deb http://mirror.2degrees.nz/kali kali-rolling main non-free contrib" | sudo tee /etc/apt/sources.list
+sudo apt update
+sudo apt full-upgrade
+sudo apt -o "Acquire::https::Verify-Peer=false" update
+
+https://unix.stackexchange.com/questions/399056/kali-update-repository-different-to-sources-list
+
+
+# duplicate wsl distribution
+
+https://superuser.com/questions/1589877/how-do-you-clone-a-wsl-distro
+https://stackoverflow.com/questions/51584765/how-do-you-install-multiple-separate-instances-of-ubuntu-in-wsl
+https://learn.microsoft.com/en-us/windows/wsl/use-custom-distro
+https://learn.microsoft.com/en-us/windows/wsl/wsl-config#user-settings
+ 
+
+# kali-linux 
+
+wsl --export kali-linux c:\temp\kali-linux.tar
+wsl --import kali-linux-zap C:\dev\wsl\kali-linux-zap c:\temp\kali-linux.tar
+wsl -d kali-linux-zap -e bash -c "echo ' ' | sudo tee -a /etc/wsl.conf"
+wsl -d kali-linux-zap -e bash -c "echo '[user]' | sudo tee -a /etc/wsl.conf"
+wsl -d kali-linux-zap -e bash -c "echo 'default=my-username' | sudo tee -a /etc/wsl.conf" 
+
+wsl --terminate kali-linux-zap
+
+*** wait 8 seconds ***
+
+wsl ~ -d kali-linux-zap
+
+ 
+# clone Ubuntu
+
+wsl --export Ubuntu c:\temp\ubuntu.tar
+wsl --import Ubuntu-dvwa c:\dev\wsl\ubuntu-dvwa C:\temp\ubuntu.tar
+wsl ~ -d Ubuntu-dvwa
+ 
+
+# install docker on kali linux - needs systemctl version of wsl
+- https://www.kali.org/docs/containers/installing-docker-on-kali/
+
+
+# install zap on kali-linux
+- https://www.kali.org/tools/zaproxy/ 
+
+
+# install wappalyzer on kali-linux
+- https://www.npmjs.com/package/wappalyzer
+
+sudo apt install npm
+node -v
+npm -v
+
+npm i wappalyzer
+wappalyzer --help
+
+
+# Kali linux on docker 
+
+# Web apps built with vulnerabilities to teach web application security
+
+owasp web goat
+- https://owasp.org/www-project-webgoat/
+
+- Ubuntu
+- https://github.com/WebGoat/WebGoat
+
+sudo service docker start
+docker run -it -p 127.0.0.1:8080:8080 -p 127.0.0.1:9090:9090 webgoat/webgoat 
+
+http://localhost:8080/WebGoat
+
+ 
+- kali-linux
+- https://owasp.org/www-project-webgoat/ 
+
+wget https://github.com/WebGoat/WebGoat/releases/download/v2023.4/webgoat-2023.4.jar
+sudo apt install openjdk-17-jre-headless
+java -Dwebgoat.port=8081 -Dwebwolf.port=9091 -jar webgoat-2023.4.jar
+ 
+http://127.0.0.1:8081/WebGoat
+               
+
+dvwa (damn vulernerable web app)
+- https://www.kali.org/tools/dvwa/
+
+- clone Ubuntu 
+
+wsl --export Ubuntu c:\temp\ubuntu.tar
+wsl --import Ubuntu-dvwa c:\dev\wsl\ubuntu-dvwa C:\temp\ubuntu.tar
+wsl ~ -d Ubuntu-dvwa
+
+sudo service docker start
+docker run -it -p 127.0.0.1:8080:8080 -p 127.0.0.1:9090:9090 webgoat/webgoat

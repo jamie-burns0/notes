@@ -1,0 +1,84 @@
+# virtualization notes
+
+VirtualBox
+
+For just spinning up a VM, VirtualBox is a good choice
+- via GUI or command line
+- fast
+- can control resources on a per VM basis
+- well documented
+
+However, we can't do nested virtualization in VB on Windows.
+
+VB is a VM in it's own right. A VM running in VB can't
+run a VM
+
+Windows (Hypervisor) --> VB VM --> Linux VM (no KVM) -X-> some other VM 
+
+
+QEMU
+
+- is an alternative to VB
+- all CLI
+- smaller than VB
+- didn't run XFCE desktop on Kali linux as well as VB did
+
+
+Hyper-V
+- see https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/about/
+
+- is a Windows feature that needs to be turned on
+- is nested virtualization supported?
+- MS is only supporting it until 2029
+- MS have not announced its replacement
+
+For me, it seems like MS is throwing it's support into WSL and Docker
+
+
+WSL
+
+- WSL is well integrated into Windows. I can launch code.exe and other
+  exe's from within the VM and it will launch the app in Windows. I
+  guess we could say Windows is the desktop environment for the Linux
+  VM
+- It does give me a cheap, integrated way to use Linux command line on
+  Windows
+- my main issue with WSL is that we have to allocate memory and CPUs to
+  the whole WSL system. I can't allocated 512Mb to one VM and 2048Mb to 
+  another VM. I have to allocated enough to support all the VMs that
+  could be running at the same time or for the VM that needs the most.
+  For example, I might allocated 4096Mb to WSL, and then run a VM that
+  only needs 512MB. WSL is going to reserve 4096Mb
+- To run a Linux distro and access it's desktop environment, i need to
+  install an X-Server on Windows and access it that way. Where-as, in 
+  VB I get the desktop environment.
+
+
+Docker and Podman
+
+It turns out each of these are VMs in their own right and run containers
+within their VM. For example, the Podman VM is referenced at
+
+HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Lxss
+
+For Podman,
+
+   "Podman Desktop creates a Windows Subsystem for Linux version 2 (WSL 2) virtual machine: the Podman Machine"
+   - see https://podman-desktop.io/docs/installation/windows-install
+
+Docker and Podman pull from the same registries
+
+Both Docker and Podman delegate(?) their VM to WSL 
+
+Podman says it does everything Docker does - just replace "docker" in the
+command with "podman".
+
+Docker is the main game in town. However, my objection to it and, I guess
+what i prefer about Podman is that Docker runs a daemon and Podman doesnt.
+
+It seems that Docker and Podman (and their competitors) are really just
+the new way of doing virtualization. Instead of VirtualBox or WSL or VMWare,
+just use Docker/Podman.
+
+
+

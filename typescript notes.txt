@@ -1,0 +1,10 @@
+typescript notes
+
+- https://nodejs.org/en/learn/getting-started/nodejs-with-typescript
+- https://www.typescriptlang.org/docs/handbook/intro.html
+- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions
+
+testing
+- https://dev.to/thinhda/unit-testing-in-nodejs-and-typescript-a-comprehensive-guide-with-jest-integration-2902
+- https://jestjs.io/docs/getting-started
+

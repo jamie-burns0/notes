@@ -1,0 +1,44 @@
+deno notes
+- https://docs.deno.com/runtime/manual/getting_started
+- https://docs.deno.com/runtime/manual/references/vscode_deno/
+- https://cheatsheet.deno.dev/
+- https://www.typescriptlang.org/docs
+- https://developer.mozilla.org/en-US/docs/Web/JavaScript
+
+
+# install
+- see https://docs.deno.com/runtime/manual/getting_started/installation
+
+$env:DENO_INSTALL = "c:\\dev\\tools\\deno-1.42.0"
+irm https://deno.land/install.ps1 | iex
+
+
+
+PowerShell (as self)
+
+$env:PROJECT_NAME = "deno1"
+$env:DENO_VERSION = "1.42.0"
+
+$env:DENO_HOME = "c:\dev\tools\deno-$env:DENO_VERSION"
+
+$env:PROJECT_HOME = "c:\dev\projects"
+$env:PROJECT_PATH = "$env:PROJECT_HOME\$env:PROJECT_NAME"
+
+$env:Path = "$env:NODE_HOME;" + $env:Path 
+
+if (!(Test-Path -PathType Container $env:PROJECT_PATH )) {
+    New-Item -ItemType Directory -Path $env:PROJECT_PATH
+}
+
+cd $env:PROJECT_HOME\$env:PROJECT_NAME
+
+& $env:DENO_HOME\bin\deno.exe test --allow-net .\tests\person_tests.ts
+
+& $env:DENO_HOME\bin\deno.exe run --allow-net .\src\hello.ts
+
+
+
+& $env:DENO_HOME\bin\deno.exe run --allow-net .\src\server.ts
+
+curl http://localhost:8000 -v
+curl http://localhost:8001 -v

@@ -1,0 +1,4 @@
+# openSUSE-Tumbleweed notes
+
+sudo zypper dup
+

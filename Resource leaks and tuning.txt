@@ -1,0 +1,287 @@
+(prompts to remember things)
+
+Bringing a blend of hands-on business experience and technical depth across all Application Lifecycle Management stages with experience in service domains such as:
+- financial: insurance (personal, life, statuatory), superannuation, asset management, capital market
+- building managment
+- health
+- education
+- government
+
+Ability to take initiative and manage work autonomously, while fostering positive team dynamics and delivering collective success, in both co-located and distributed onshore-offshore (China, India, Singapore, Japan, USA) team and partner environments.
+
+Engaging and collaborating with clients, end-users, stakeholders (product, business, technology, operations and corporate), providers, operations and partners thoughout design, development and delivery of products, features, enhancements and fixes.
+- workshops
+- requirements gathering and elaboration
+- ceremonies (standups, sprint planning, retropectives, showcases,...)
+- sizing and prioritisation
+- developing release plans and product roadmaps
+- user acceptance and regression testing
+
+Delivering value by designing, implementing and delivering secure, reusable, testable, rapid, maintainable and efficient code in an Agile-CI/CD-DevSecOps software development flavour.
+
+Having experience in:
+- language platforms: Java 17, Web (JSON, XML, REST, SOAP, JavaScript, HTML, CSS, Angular), Spring, Scripting (NodeJs, Groovy, Ansible, YAML, bash, PowerShell, Python, PERL), JavaEE, Struts
+- source control repository: Git, BitBucket, SourceTree, Subversion, Tortoise, CVS, Mercurial
+- developer tools/development environments: Visual Studio Code, Copilot, IntelliJ, Eclipse, NetBeans
+- project management: JIRA
+- build tools: Maven, Gradle, Ant-Ivy
+- continuous integration: Jenkins/Alfred
+- testing: JUnit, Mockito, AssertJ, Adobe Target (AB testing), Selenium
+- artifact repository: Nexus, Artifactory
+- cloud compute, storage and content services: AWS
+- platforms: Windows, WSL, Linux, Docker, Tomcat, WebSphere, Apache HTTPD, JBoss EAP
+- agile methodologies: Scrum, Lean start-up, XP
+- documentation: Confluence, Plantuml, Visio
+ 
+
+Owning and performing system health and performance activities, such as
+- Monitoring performance metrics against 
+- Monitoring application and system availability and health
+- Identifying, reponding to and remedying outages and system failures
+- Identifying and remediating resource constraints
+- Reporting and management of running costs
+- Creating and responding to alerts
+- Building in error handling and logging
+- Capacity planning and monitoring
+- Developing, maintaining and executing release, business continuity, and disaster recovery plans
+- Penetration testing procurement, preparation, and remediation
+- Monitoring, tuning, and remediating JVM and system resources health and constraints:
+  - Memory leaks, usage and exhaustion
+  - Thread deadlocks, consumption, bottlenecks, and exhaustion
+  - CPU usage: peak/instantaneous demand, sustained demand
+  - Network: latency, throughput
+- Monitoring, observability and incident management tools: Splunk, Imperva, ServiceNow, CloudTrail
+- Customer service and engagement tools: Zendesk, ServiceNow
+- Profiling tools: JConsole, YourKit, VisualVM, JProfiler
+- Web optimization and marketing tools: Google Search Console, Adobe Target (AB testing), BrightEdge, Tune, BazaarVoice, Clicktale
+
+Applying defence in depth strategies and practices, such as
+- Employing static and dynamic vulnerability detection tools such as Fortify, SonarQube and ZAP
+- Encryption: at rest, in-transit
+- Patching systems and libraries
+- Penetration testing
+- Monitoring, logging, asset management: Splunk, Imperva, Firescope 
+- Evil user stories
+- Threat modelling
+- Code reviews
+- Retiring and decommissioning unused applications, services and systems
+- Preparation and ownership of Internal Risk Assessments, External Partner Security Standards, Secure Development Assessments
+- collaboration with security and operational teams and specialist
+- security compliance training and certification
+- audits
+
+Integrating with diverse backend systems such as:
+- mainframe policy
+- insurance claims
+- messenging
+- authentication and authorisation
+- api gateway
+- document and notices
+- database systems
+- payment gateways
+- building management system
+- external party systems (NSW RMS, DigiCall roadside assistance, superannuation clearing house)
+- medical management
+- batch processing
+- bespoke backends
+
+With current interests in
+- Apis: GraphQL
+- Computer science: graph algorithms
+- Platforms: JanusGraph, Gremlin, Cassandra, SpringBoot 3, React
+- Languages: Rust, Deno
+- Virtualisation: VirtualBox, Hyper-V
+- Containerisation: Docker, Podman, QEMU
+- Linux: Kali, Alpine
+
+
+
+
+
+
+baking in...
+
+
+
+
+
+DevSecOps is the practice of 
+- integrating security testing at every stage of the software development process
+- tools and processes that encourage collaboration between developers, security specialists, and operation teams to build software that can withstand modern threats
+- security assurance activities such as code review, architecture analysis, and penetration testing are integral to development efforts.
+
+
+
+
+
+
+Tuning
+
+transaction rates
+
+API usage profile: requests- peak , sustained demand; system demand;
+
+mitigation
+
+
+
+
+Strategies for load management
+
+blue-green deployment strategy
+
+
+
+Cost of running services and applications
+
+
+
+
+with experience across the full SDLC
+
+## Copilot
+Absolutely, I'd be happy to help you with that. Here are some talking points you might consider including in your cover letter:
+- Understanding of SDLC Models: Mention your familiarity with different Software Development Life Cycle (SDLC) models like Waterfall, Agile, Scrum, and DevOps. Highlight any specific models you've worked with in your projects.
+- Requirements Gathering and Analysis: Discuss your experience in working with clients, stakeholders, or end-users to gather and analyze their requirements. This could include conducting meetings, collaborative sessions, or using tools like JIRA or Trello.
+- Design and Prototyping: Talk about your skills in designing the system architecture or creating prototypes. You could mention any design principles you follow, like SOLID or DRY, and any design tools you've used, like UML or wireframing tools.
+- Coding and Implementation: Highlight your programming skills, languages you're proficient in, and your approach to writing clean, efficient, and maintainable code. Mention any coding standards or best practices you adhere to.
+- Testing: Discuss your experience in different types of testing like unit testing, integration testing, system testing, and user acceptance testing. Mention any testing frameworks you've used, like JUnit or Selenium.
+- Deployment: Talk about your experience in deploying software, whether it's on-premise or cloud (like AWS, Google Cloud, or Azure), and any CI/CD tools you've used, like Jenkins or Travis CI.
+- Maintenance: Discuss any experience you have in providing post-deployment support, bug fixing, or developing updates or enhancements for the software.
+- Team Collaboration: Highlight your experience working in a team, your communication skills, and your ability to collaborate and work effectively with others.
+- Project Management: If you've had experience managing projects, discuss your ability to plan, organize, and control resources to achieve specific goals.
+
+
+
+Application Lifecycle Management ALC
+
+## Copilot
+Sure, here are some talking points you might consider for Application Lifecycle Management (ALM):
+- ALM Understanding: Discuss your understanding of ALM and its importance in managing the life cycle of applications from conception to retirement.
+- Requirements Management: Talk about your experience in gathering, analyzing, documenting, and managing changes to the requirements of a project.
+- Project Management: Highlight your skills in planning, scheduling, and controlling the project processes from initiation through closure.
+- Quality Management: Discuss your strategies for ensuring that the project's products meet the defined quality standards.
+- Change Management: Share your approach to managing change requests and incorporating them into the project.
+- Risk Management: Discuss your experience in identifying, analyzing, and managing potential risks that could impact the project.
+- Release Management: Talk about your skills in managing the process of releasing new or updated software versions.
+- Integration: Discuss your experience with integrating different ALM tools and creating a unified ALM environment.
+- Collaboration: Highlight your ability to collaborate with different stakeholders (developers, testers, business analysts, etc.) and facilitate communication among them.
+- Continuous Improvement: Mention your commitment to continuously improving processes and practices in line with evolving business needs.
+
+or
+
+## Copilot
+Great point! For IT assets that are developed in-house, such as APIs and web applications, the lifecycle management is often referred to as Software Lifecycle Management or Application Lifecycle Management (ALM). This lifecycle includes the following stages:
+- Planning: This involves identifying the need for a new application based on business requirements.
+- Development: This involves designing, coding, and testing the application. It includes stages like requirements gathering, design, coding, testing, and debugging.
+- Deployment: This involves deploying the application in the production environment where it can be accessed by end-users.
+- Operation and Maintenance: This involves the daily operation of the application, monitoring its performance, and making necessary updates or enhancements.
+- Retirement/Decommissioning: Similar to IT Asset Lifecycle Management, this involves retiring the application when it's no longer needed. This could be due to factors like technological obsolescence, changing business needs, or the development of a more efficient application. Decommissioning involves tasks like data migration, user notification, system shutdown, and secure data deletion.
+- Replacement/Upgrade: If necessary, the retired application is replaced or upgraded with a new one, and the cycle begins anew.
+In all these stages, it's important to follow best practices and standards to ensure the quality and reliability of the application. It's also crucial to have a well-planned strategy for each stage to ensure smooth transitions and minimal disruption to users and the business.
+
+
+
+
+I'm being interviewed for a position that includes the following in its list of skills: Knowledge of microservices architecture, design, and integration patterns.
+
+Copilot
+Certainly! Having a solid understanding of microservices architecture, design, and integration patterns is crucial for building scalable and maintainable systems. Let’s dive into some key concepts:
+1. Microservices Architecture:
+- Definition: Microservices is an architectural style where an application is composed of loosely coupled, independently deployable services.
+- Characteristics:
+  - Decomposition: Breaks down the application into small, focused services.
+  - Independence: Each service can be developed, deployed, and scaled independently.
+  - Communication: Services communicate via APIs (often RESTful or event-driven).
+  - Autonomy: Teams can work on different services without interfering with each other.
+- Benefits:
+  - Scalability: Easily scale individual services based on demand.
+  - Maintainability: Isolated services are easier to maintain and update.
+  - Resilience: Failures in one service don’t affect the entire system.
+2. Integration Patterns:
+- Event-Driven Architecture:
+  - Purpose: Enables asynchronous communication between services.
+  - Description: Services produce and consume events (e.g., messages, notifications) via a message broker (e.g., Kafka, RabbitMQ). This pattern decouples services and allows them to react to events.
+  - Benefits: Loose coupling, scalability, and real-time responsiveness.
+- Request-Reply Pattern:
+  - Purpose: Facilitates synchronous communication between services.
+  - Description: One service sends a request to another and waits for a response. Commonly used for querying data or invoking specific actions.
+  - Benefits: Simple to implement, suitable for certain use cases.
+  - Reference:
+- Saga Pattern:
+  - Purpose: Manages distributed transactions across multiple services.
+  - Description: A saga represents a sequence of local transactions. If one transaction fails, compensating actions are executed to maintain consistency.
+  - Benefits: Ensures data consistency in complex workflows.
+  - Reference:
+- Choreography vs. Orchestration:
+  - Choreography: Services collaborate by reacting to events. No central controller; each service knows its role.
+  - Orchestration: A central orchestrator coordinates service interactions. It defines the flow and sequence of actions.
+  - Choose Wisely: Consider trade-offs between simplicity (choreography) and control (orchestration).
+- Reference:
+3.	Design Patterns:
+- API Gateway: Centralizes external communication, handles authentication, and routes requests to appropriate services.
+- Service Discovery: Dynamically locates and registers services to simplify communication.
+- Circuit Breaker: Prevents cascading failures by monitoring service health.
+- Load Balancing: Distributes requests across service instances.
+- Bulkhead: Isolates faults to prevent system-wide failures.
+- CQRS (Command Query Responsibility Segregation): Separates read and write operations for performance optimization.
+
+
+
+## Copilot
+Incorporating defense in depth strategies into your Application Lifecycle Management (ALM) and Software Development Lifecycle (SDLC) can significantly enhance the security of your applications. Here's what it might look like:
+- Secure Design: Start with a secure design that follows best practices and principles such as least privilege, separation of duties, and secure defaults. Incorporate threat modeling to identify potential security threats and design countermeasures.
+- Secure Coding Practices: Implement secure coding practices to prevent common vulnerabilities. Use tools to check for security issues in your code (static analysis) and while the application is running (dynamic analysis).
+- Security Testing: Regularly conduct security testing, including penetration testing and vulnerability scanning, to identify and fix security issues.
+- Secure Deployment: Use secure deployment practices such as using secure configurations, encrypting data in transit and at rest, and using least privilege principles for access controls.
+- Patch and Vulnerability Management: Regularly update and patch your systems to protect against known vulnerabilities.
+- Incident Response Plan: Have a plan in place to respond to security incidents. This includes identifying the incident, containing the threat, eradicating the threat, recovering from the incident, and conducting a post-incident analysis to learn from the event.
+- Security Training and Awareness: Train your team on security best practices and keep them aware of the latest threats and how to avoid them.
+- Continuous Monitoring: Continuously monitor your systems for any unusual or suspicious activity. Use intrusion detection systems (IDS) and intrusion prevention systems (IPS) to help with this.
+- Regular Audits: Conduct regular security audits to ensure that your security controls are working as intended.
+Remember, defense in depth is about having multiple layers of security controls in place. If one control fails, others are there to prevent a security breach. It's an effective strategy to protect your applications throughout their lifecycle.
+
+
+## Copilot
+Secure coding practices are guidelines and procedures designed to prevent the introduction of security vulnerabilities during the development phase. Here are some key secure coding practices:
+- Input Validation: Always validate input from all untrusted data sources. Proper input validation can eliminate the vast majority of software vulnerabilities.
+- Output Encoding: Ensure that output is encoded so that any executable content from untrusted sources can be prevented from being maliciously exploited.
+- Authentication and Password Management: Incorporate strong authentication and password management practices. This includes enforcing password complexity requirements and protecting user credentials.
+- Session Management: Implement secure session management, including unique session IDs that are not vulnerable to session prediction, session timeouts, and rotation of session IDs after successful login.
+- Access Controls: Implement proper access controls to prevent unauthorized access to sensitive data and functions.
+- Error Handling and Logging: Do not reveal sensitive information in error messages and ensure logs do not contain sensitive information.
+- Data Protection: Protect sensitive data using encryption during transit and at rest. Also, ensure sensitive data is not stored unnecessarily.
+- Communication Security: Use secure protocols for communication like HTTPS instead of HTTP.
+- System Configuration: Ensure your systems are configured with secure settings, and unnecessary features and functionalities are disabled.
+- Database Security: Use parameterized queries or prepared statements to prevent SQL injection attacks.
+- Code Reviews and Unit Testing: Regularly review code and conduct unit testing to detect and eliminate security vulnerabilities early in the development process.
+- Patch and Vulnerability Management: Regularly update and patch all systems to protect against known vulnerabilities.
+Remember, these are just general guidelines. The specific practices can vary depending on the programming language used and the nature of the project. It's also important to stay updated on the latest security threats and mitigation strategies
+
+
+
+## Copilot
+A CI/CD environment consists of several core components or tools that facilitate the continuous integration and continuous delivery/deployment process. Here are some of them:
+- Source Control Systems: These are tools like Git that help manage changes to source code. They're essential for enabling team collaboration and version control.
+- Build Tools: These are tools that compile your code into executable code. Examples include Maven and Gradle for Java, and npm for JavaScript.
+- Continuous Integration Servers: These are tools like Jenkins, CircleCI, and Travis CI that automate the building, testing, and reporting of your application whenever changes are committed to the source control system.
+- Configuration Management Tools: These are tools like Ansible, Chef, and Puppet that automate the configuration of your servers.
+- Testing Frameworks: These are tools that help automate testing at various levels (unit, integration, system, etc.). Examples include JUnit for Java, pytest for Python, and Mocha for JavaScript.
+- Artifact Repository: This is a dedicated file storage for application binaries. Examples include JFrog Artifactory and Sonatype Nexus.
+- Deployment Automation Tools: These are tools like AWS CodeDeploy and Octopus Deploy that automate the deployment of your application to the production environment.
+- Monitoring Tools: These are tools like Nagios and Datadog that help monitor your application and infrastructure for issues.
+- Containerization & Orchestration Tools: These are tools like Docker for creating isolated environments (containers) for running your application, and Kubernetes for managing clusters of containers.
+- Cloud Providers: Providers like AWS, Google Cloud, and Azure offer various services that can be used in a CI/CD pipeline.
+Remember, the specific tools you choose can depend on your team's needs, the nature of your project, and your personal preferences
+
+
+## Copilot
+Agile, DevSecOps, and CI/CD are all methodologies that aim to improve the software development process, and they are closely related and often used together to achieve efficient and effective software delivery.
+Agile is a set of principles for software development under which requirements and solutions evolve through the collaborative effort of self-organizing cross-functional teams. It advocates adaptive planning, evolutionary development, early delivery, and continuous improvement, and it encourages flexible responses to change.
+CI/CD stands for Continuous Integration and Continuous Delivery. Continuous Integration is a practice where developers regularly merge their code changes into a central repository, after which automated builds and tests are run. Continuous Delivery is a practice where code changes are automatically built, tested, and prepared for a release to production.
+DevSecOps is a culture shift in the IT industry that aims to bake security into the rapid-release cycles that are typical of modern application development and deployment, also known as the DevOps movement. In other words, the classic DevOps culture of collaboration and unity among Developers and Operations is extended to include Security practices from the start.
+The relationship between these three can be summarized as follows:
+- Agile focuses on the development process, emphasizing change while accelerating delivery.
+- CI/CD focuses on practices and tools that emphasize automation, facilitating a software-defined life cycle. High-functioning CI/CD practices directly facilitate agile development because software changes reach production more frequently.
+- DevSecOps focuses on culture, emphasizing roles that promote responsiveness. It shares concepts with agile principles such as the CI/CD pipeline, improving software delivery and quality, a culture of innovation, service-level goals and indicators (SLOs and SLIs), collaboration across teams, and automation.
+In essence, Agile, DevOps, and CI/CD are three distinct tools, each important in its own right. When a development organization uses all three for their intended purposes, the results are transformational.

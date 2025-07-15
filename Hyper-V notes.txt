@@ -1,0 +1,215 @@
+
+Hyper-V notes - see also system-builds project readme.md
+
+- https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/enable-hyper-v
+
+
+PowerShell (administrator)
+
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+
+
+Nested virtualisation
+- can be enabled after the VM is created
+
+Disable Secure Boot for linux distros
+
+PowerShell (administrator)
+
+$env:VM_NAME="alpine-hyperv"
+
+Get-VM
+Set-VMProcessor -VMName $env:VM_NAME -ExposeVirtualizationExtensions $true
+Set-VMFirmware -VMName $env:VM_NAME -EnableSecureBoot Off
+
+
+Fedora CoreOS
+- https://docs.fedoraproject.org/en-US/fedora-coreos/provisioning-hyperv/
+- https://docs.fedoraproject.org/en-US/fedora-coreos/producing-ign/
+- https://fedoraproject.org/coreos/download?stream=stable
+
+
+# add ignition config file to vm
+
+# to create a SSH key for our user
+- copy the *public* ssh key value into our butane yaml file
+
+Powershell (as self)
+
+ssh-keygen -t ed25519 -C "core" -f c:\dev\projects\system-build-files\fedora-coreos-ignition\core_id_ed25519
+
+# copy the *public* key into our butane yaml file
+# any host or vm that wants to ssh into our fedora coreos
+  vm using key-based authentication, will need to copy the
+  *private* key to their .ssh folder. For example, from a
+  wsl2 vm,
+
+  cp /mnt/c/dev/projects/system-build-files/fedora-coreos-ignition/core_id_ed25519 ~/.ssh
+  chmod 600 ~/.ssh/core_id*
+
+  and, for convenience, add the config fragment in c:\dev\projects\system-build-files\fedora-coreos-ignition\ssh-config-fragment.txt to their ~/.ssh/config file.
+
+
+# if we want to create a password for our user
+- copy password hash into our butane yaml file
+
+Powershell (as self)
+
+podman run -it --rm quay.io/coreos/mkpasswd --method=yescrypt
+
+
+cd c:\dev\projects\system-build-files\fedora-coreos-ignition
+
+# create transpiled ignition config json file from butane config yaml file
+
+$env:VM_NAME="fedora-coreos-hyperv"
+$env:VM_NAME="fedora-coreos-hyperv-2"
+
+Get-Content -Path .\$env:VM_NAME.bu.yaml | podman run --interactive --rm --volume .:/tmp/butane_files_dir quay.io/coreos/butane:release --pretty --strict --files-dir /tmp/butane_files_dir | Set-Content -Path ${env:VM_NAME}_transpiled_config.ign
+
+Get-Content -Path .\$env:VM_NAME.bu.yaml | podman run --interactive --rm --volume /c/dev/projects/system-build-files/fedora-coreos-ignition:/tmp/butane_files_dir quay.io/coreos/butane:release --pretty --strict --files-dir /tmp/butane_files_dir | Set-Content -Path {$env:VM_NAME}_transpiled_config.ign
+
+
+# In Hyper-V create a Fedora CoreOS vm
+
+Powershell (as administrator)
+
+$env:VM_NAME="fedora-coreos-hyperv"
+$env:VM_NAME="fedora-coreos-hyperv-2"
+$env:VHDX_FILE_NAME="fedora-coreos-40.20240416.3.1-hyperv.x86_64.vhdx"
+$env:VHDX_FILE_NAME="fedora-coreos-40.20240709.3.1-hyperv.x86_64.vhdx"
+$env:SWITCH_NAME="HostNetworkVirtualSwitch"
+
+$env:VM_HOME="c:\dev\work\virtual-machines\$env:VM_NAME\$env:VM_NAME"
+
+Remove-VM -Name $env:VM_NAME -Force
+Remove-Item -Recurse -Path "$env:VM_HOME\Snapshots"
+Remove-Item -Path "$env:VM_HOME\Virtual Hard Disks\*.vhdx"
+New-Item -Path "$env:VM_HOME\Virtual Hard Disks" -ItemType Directory
+Copy-Item "c:\dev\work\images\$env:VHDX_FILE_NAME" -Destination "$env:VM_HOME\Virtual Hard Disks"
+
+New-VM -Name "$env:VM_NAME" -Generation 2 -VHDPath "$env:VM_HOME\Virtual Hard Disks\$env:VHDX_FILE_NAME" -MemoryStartUpBytes 4GB -SwitchName "$env:SWITCH_NAME" -BootDevice VHD -Path "$env:VM_HOME"
+
+Set-VMProcessor -VMName $env:VM_NAME -Count 4 -ExposeVirtualizationExtensions $true
+Set-VMFirmware -VMName $env:VM_NAME -EnableSecureBoot Off
+
+*BEFORE* starting vm for the *FIRST* time...
+- this step can only be done once before the first boot
+- once the VM has booted, the ignition configuration will
+  be applied. To reapply, the VM has to be destroyed,
+  recreated and configured again.
+
+c:\dev\tools\kvpctl\kvpctl-amd64.exe $env:VM_NAME add-ign c:\dev\projects\system-build-files\fedora-coreos-ignition\${env:VM_NAME}_transpiled_config.ign
+
+
+# create external vm switch
+- https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/get-started/create-a-virtual-switch-for-hyper-v-virtual-machines?tabs=hyper-v-manager
+- https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/plan/plan-hyper-v-networking-in-windows-server
+- https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v-virtual-switch/hyper-v-virtual-switch
+- https://learn.microsoft.com/en-us/windows-server/networking/core-network-guide/core-network-guide#BKMK_planning
+- https://www.altaro.com/hyper-v/virtual-networking-configuration-best-practices/
+- https://learn.microsoft.com/en-us/biztalk/technical-guides/network-optimizations
+
+Powershell (adminstrator)
+
+$env:SWITCH_NAME="HostNetworkVirtualSwitch"
+$env:NET_ADAPTER_NAME="Wi-Fi 2"
+
+New-VMSwitch -Name $env:SWITCH_NAME -NetAdapterName "$env:NET_ADAPTER_NAME"
+Set-VMSwitch -Name $env:SWITCH_NAME -AllowManagementOS $true -Notes "External Virtual Switch sharing the same network as the hosts network adapter"
+
+#
+Google speed test reports extremely slow __upload__ speed of around 1.15Mbs. On my Belong Standard Plus plan it should be 15x faster at around 17Mbs. Reported download speed is 54Mbs which is what we expect on the plan.
+
+This upload speed can be fix by following the "slow download" fix by cereberus 08/AUG/2021 at https://www.tenforums.com/virtualization/183576-very-slow-up-download-speeds-hyperv-external-switch-setup.html. Pasted the entire post below in case the page gets deleted.
+
+Also found this Intel post, https://community.intel.com/t5/Wireless/Hyper-V-External-Virtual-Switch-Bridge-Mode-Slow-download-speeds/td-p/1222149, addressing the same issue with the same solution. It references a Microsoft technical guide for network optimizations
+- https://learn.microsoft.com/en-us/biztalk/technical-guides/network-optimizations
+- https://learn.microsoft.com/en-us/windows-hardware/drivers/network/using-registry-values-to-enable-and-disable-task-offloading
+
+In our case, apply the fix to HostNetworkVirtualSwitch
+
+Window+R > ncpa.cpl > right-click "vEthernet(HostNetworkVirtualSwitch)" > select "Properties" > select "Configure..." > Advanced > disable both "Large Send Offload Version 2 (IPv4)", "Large Send Offload Version 2 (IPv6)" > OK
+
+OR
+
+Settings > Network & internet > Advanced Network Settings > expand "vEthernet(HostNetworkVirtualSwitch)" > select Edit on "More adapter options" > select "Configure..." > Advanced > disable both "Large Send Offload Version 2 (IPv4)", "Large Send Offload Version 2 (IPv6)" > OK
+
+I don't know if a reboot is required, but I rebooted just in case
+
+
+
+
+Get-NetIPAddress -InterfaceIndex (Get-NetAdapter -IncludeHidden -Name 'vEthernet (testSwitch)').ifIndex
+
+
+
+
+
+Ubuntu screen size
+- https://superuser.com/questions/1660150/change-screen-resolution-of-ubuntu-vm-in-hyper-v
+
+PowerShell (administrator)
+
+set-vmvideo -vmname $env:VM_NAME -horizontalresolution:1600  -verticalresolution:900 -resolutiontype single
+
+
+
+# Copilot
+
+You
+I have hyper-v vms that share the same network. They all have the same default gateway, 172.20.240.1. I want to assign static ip addresses to each vm instead of using dhcp assigned ip addresses. The dhcp assigned addresses have a /20 CIDR. What is the range of static ip addresses available to me?
+Copilot
+Using
+the web
+The /20 CIDR notation means that the first 20 bits of the IP address are used for the network address, and the remaining 12 bits are used for host addresses.
+
+In binary, 12 bits can represent 4096 values (from 0 to 4095). However, the first and last addresses in this range are reserved for the network address and broadcast address respectively. So, the usable range for assigning static IP addresses is from 1 to 4094.
+
+Given your network’s default gateway is 172.20.240.1, it seems like your network address is 172.20.240.0/20. This means the range of usable IP addresses for your network is from 172.20.240.1 to 172.20.255.254.
+
+Please note that you should avoid assigning any IP addresses that are already in use or reserved by the DHCP server. Also, remember to update the network configuration of each VM to reflect the static IP assignment. You may need to restart the network service or the VM for the changes to take effect.
+
+Remember, it’s always a good practice to document the assigned static IP addresses to avoid conflicts in the future.
+
+
+
+
+
+- "slow download" fix by cereberus 08/AUG/2021 at https://www.tenforums.com/virtualization/183576-very-slow-up-download-speeds-hyperv-external-switch-setup.html
+
+
+Very slow up/download speeds with HyperV external switch setup
+
+A long standing issue for many Hyper-V users is when you set up an external wifi switch in Hyper-V, it kills the download and/or upload speeds.
+
+On my ASUS with an Intel NIC, my uploads and downloads are only 2% of normal speeds making internet virtually useless.
+
+The problem does not arise with the default switch but that is behind a NAT which makes it very difficult to RDP direct to VM.
+
+I have found a solution that works for me, and I am now back at full speed.
+
+Slow download - disable packet coalescing on the wifi card settings in device manager.
+
+Slow upload - disable large send offload (for IPV4 and IPV6) from the external vethernet switch that is bridged (not the default vethernet switch).
+
+I have no idea if this works for other network adaptors but seems to work for Intel NICs.
+
+Source of information (credit to Mike in post #6).
+
+virtualization - Creating an external virtual switch on Hyper-V causes host to experience very slow networking - Super User
+
+
+Edit 1: After a bit of testing, it seems you can reenable packet coalescing again after you have disabled it. I suspect there is an initialisation file that gets updated correctly first time you disable it, and then it works fine after that. Obviously disable it again, if downloads are affected.
+
+I also tried reenabling the large send offloads, and the upload speed died again. So for time being, they should remain disabled.
+
+Edit 2: I went back to my old laptop to see if I could fix the same issue with a Qualcomm Atheros QCA61x4 wifi card. I tried lots on combos on web but none worked. So I looked at the network driver, and the hyper-v "external" virtual adapter and found five settings referring to "coalescing" in setting name and disabled them all.
+
+My flabber was gasted - it worked! I have full internet speed with the external switch enabled - I can now RDP to Hyper-V vms directly.
+
+I have no idea which particular setting(s) fixed it but on grounds, "if it ain't broke (anymore), don't fix it", I have no intention of trying to work out which one or more did the trick.
+
+So, if you have similar issues, try disabling anything with coalescing in setting name.
+
+It's taken me over four years to solve this, but then my colleagues at work say I am a persistent b%%%%%rd when trying to solve a tricky problem - LOL!!!

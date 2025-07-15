@@ -1,0 +1,157 @@
+sudo apt update
+sudo apt upgrade
+sudo apt full-upgrade
+
+# install WSL2
+
+https://wiki.dev.smbc.nasdaqomx.com/confluence/display/dad/Getting+Started
+https://learn.microsoft.com/en-us/windows/wsl/install
+https://docs.microsoft.com/en-us/windows/wsl/install-manual
+
+wsl --install -d Ubuntu
+
+
+c:\users\xxx\.wslconfig
+
+[wsl2]
+memory=4GB
+processors=2
+guiApplications=false
+debugConsole=false
+
+
+# fix name resolution for sudo apt update
+# - dont forget to wait for 8 sec after running --terminate
+# - see https://gist.github.com/coltenkrauter/608cfe02319ce60facd76373249b8=
+ca6
+
+#1. cd /etc (go to etc folder in WSL).
+2. echo "[network]" | sudo tee /etc/wsl.conf (Create wsl.conf file and add =
+the first line).
+3. echo "generateResolvConf = false" | sudo tee -a /etc/wsl.conf (Append =
+wsl.conf the next line).
+4. wsl --terminate Debian (Terminate WSL in Windows cmd, in case is Ubuntu =
+not Debian).
+   *** wait 8 seconds after running the command above ***
+#5. cd /etc (go to etc folder in WSL).
+6. sudo rm -Rf /etc/resolv.conf (Delete the resolv.conf file).
+7. In windows cmd, ps or terminal with the vpn connected do: Get-NetIPInter=
+face or ipconfig /all for get the dns primary and
+secondary.
+8. With the dns primary and secondary getted replace the numbers in the nex=
+t step in the X.X.X.X
+9. echo "nameserver X.X.X.X" | sudo tee /etc/resolv.conf (Create resolv.con=
+f and append the line.)
+10. echo "nameserver X.X.X.X" | sudo tee -a /etc/resolv.conf (Append the li=
+ne in resolv.conf)
+11. wsl --terminate Debian (Terminate WSL in Windows cmd, in case is Ubuntu=
+ not Debian).
+    *** wait 8 seconds after running the command above ***
+12. sudo chattr +i /etc/resolv.conf
+13. And finally in windows cmd, ps or terminal:
+Get-NetAdapter | Where-Object {$_.InterfaceDescription -Match "string-to-ma=
+tch"} | Set-NetIPInterface -InterfaceMetric 6000
+
+Credit: @MartinCaccia, @yukosgiti, @machuu and @AlbesK:
+https://github.com/microsoft/WSL/issues/4277
+https://github.com/microsoft/WSL/issues/4246
+
+
+lsattr /etc/resolv.conf
+sudo chattr -i /etc/resolv.conf
+echo "nameserver a.b.c.d" | sudo tee /etc/resolv.conf
+echo "nameserver e.f.g.h" | sudo tee -a /etc/resolv.conf
+sudo chattr +i /etc/resolv.conf
+
+
+# WSL with systemd support
+
+
+https://devblogs.microsoft.com/commandline/systemd-support-is-now-available=
+-in-wsl/
+https://github.com/microsoft/WSL/releases
+
+https://devblogs.microsoft.com/commandline/a-preview-of-wsl-in-the-microsof=
+t-store-is-now-available/#how-to-install-and-use-wsl-in-the-microsoft-store
+https://gist.github.com/ChristophShyper/a4457ecb64db6d2fd11fe994bb614e13
+https://gist.github.com/djfdyuruiry/6720faa3f9fc59bfdf6284ee1f41f950
+
+
+# install docker
+
+https://dev.to/bowmanjd/install-docker-on-windows-wsl-without-docker-deskto=
+p-34m9
+- see Documents\install-docker-on-windows-wsl-without-docker-desktop.pdf
+
+MY_FILE="/etc/docker/daemon.json"
+echo '{' | sudo tee $MY_FILE
+echo '    "insecure-registries": ["m.n.o.p/16"]' | sudo tee -a $MY_FILE
+echo '}' | sudo tee -a $MY_FILE
+
+
+# running docker daemon
+
+# PowerShell as self
+
+wsl ~ -d Ubuntu
+sudo dockerd
+
+# install latest docker image
+# PowerShell as self
+
+wsl ~ -d Ubuntu
+docker pull ...
+
+docker run -p 1234:1234 -v "/some/folder:/some/folder" docker-container-name
+
+docker exec -it "$(docker ps -q | head -1)" /bin/bash
+docker stop "$(docker ps -q | head -1)"
+
+# PowerShell as self
+wsl ~ -d Ubuntu
+
+# create a bridge so that container-1 can communicate with container-2
+- https://docs.docker.com/engine/tutorials/networkingcontainers/
+- https://docs.docker.com/network/drivers/bridge/
+- https://docs.docker.com/network/
+- https://www.docker.com/blog/docker-networking-design-philosophy/
+
+docker network create -d bridge my_bridge
+docker network ls
+docker network inspect my_bridge
+
+my_first_container_id=$(docker run --detach --rm --name my-first-instance --net=my_bridge -p 1234:1234 -v "/some/folder:/some/folder" -e TZ=Australia/Sydney docker-container-name)
+
+docker exec -it $my_first_container_id /bin/bash
+
+docker stop $my_first_container_id
+
+
+# PowerShell as self
+
+wsl ~ -d Ubuntu
+docker ps
+docker exec -it dd82186eac68 /bin/bash
+
+
+ps aux | grep -e [a]bcd.*other-stuff.*MNO | awk '{print $2}'
+
+
+
+/etc/wsl.conf
+[boot]
+systemd=true
+
+[network]
+generateResolvConf=false
+
+[automount]
+#enabled=false
+#mountFsTab=false
+
+[interop]
+appendWindowsPath=false
+
+[user]
+default=my-user-name
+

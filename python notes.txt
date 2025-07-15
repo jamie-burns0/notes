@@ -1,0 +1,36 @@
+python notes
+
+- https://docs.python.org/3/
+
+- https://code.visualstudio.com/docs/python/python-tutorial
+- https://code.visualstudio.com/docs/languages/python
+- https://code.visualstudio.com/docs/python/testing
+
+
+- https://developers.google.com/edu/python
+- https://vscode.dev/edu?courseId=intro-to-python&workspace-scheme=vscode-edu-workspace&profile=default&otac=SfUixoyTim&requestId=d8d562a7-ee11-498e-9190-fa0b9e9ea753&region=westus3
+- https://python-code.dev/articles/16140113
+
+- https://numpy.org/
+
+
+sudo apt install python3.11-venv
+
+
+cd /home/jamie/dev/projects/new-era/python/palindrome-interview
+
+
+python3 -m venv .venv
+
+
+/home/jamie/dev/projects/new-era/python/palindrome-interview/.venv/bin/python -m pip install -U pytest
+
+
+tee ~/dev/projects/new-era/python/palindrome-interview/pytest.ini > /dev/null <<EOT
+[pytest]
+testpaths = tests
+pythonpath = src
+EOT
+
+
+

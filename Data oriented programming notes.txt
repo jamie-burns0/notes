@@ -1,0 +1,8 @@
+Data oriented programming notes
+
+Brian Goetz
+- https://www.infoq.com/articles/data-oriented-programming-java/
+
+
+Book
+- https://www.manning.com/books/data-oriented-programming
