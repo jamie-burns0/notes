@@ -46,6 +46,14 @@ git commit -m "..."
 "readme" | Out-File "readme4.md" 
 ```
 
+# view per commit changes for a file
+
+```
+git log --patch -- path/to/file
+```
+'--' is not a switch, it is a separator that tells git, "everything after this is a file path, not a branch or other option"
+
+
 # recover a deleted branch
 
 When a branch is deleted, its commits may still be recoverable using ```git reflog```. Here's how to bring it back:
