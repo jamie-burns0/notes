@@ -39,7 +39,7 @@ cd $project_home && code ${project_name}.code-workspace --profile "Go"
 ```
 
 
--- checkout
+# checkout
 
 ```
 cd $projects_home && git clone git@github.com:jamie-burns0/go.git go
