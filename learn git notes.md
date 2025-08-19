@@ -18,6 +18,9 @@ git switch --create b1
 # ... make commits on b1
 # ... meanwhile, new commits are added to main
 git fetch origin
+git switch main
+git pull
+git switch b1
 git rebase origin/main
 ```
 
