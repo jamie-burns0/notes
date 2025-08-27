@@ -1,13 +1,19 @@
 GitHub blog
 - https://github.blog/
 
-```plain
-PowerShell (self)
+```
+$project_name = "learn-git"
 
-$tools_home = "c:/dev/tools"
+$dev_home = "c:/dev"
+$tools_home = "${dev_home}/tools"
+$projects_home = "${dev_home}/projects"
 $git_home = "${tools_home}/git"
 
+$project_home = "${projects_home}/${project_name}"
+
 $env:Path = "${git_home}/bin;" + $env:Path
+
+cd ${project_home}
 ```
 
 # rebase
