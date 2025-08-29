@@ -11,7 +11,7 @@ $git_home = "${tools_home}/git"
 
 $project_home = "${projects_home}/${project_name}"
 
-$env:Path = "${git_home}/bin;" + $env:Path
+$env:Path = "${git_home}/bin;${git_home}/usr/bin;${git_home};" + $env:Path
 
 cd ${project_home}
 ```
@@ -48,6 +48,56 @@ $merge_base = git merge-base ${parent_branch} HEAD
 git reset --soft ${merge_base}
 git commit -m "..."
 ```
+
+## git reset
+
+- all resets move the HEAD and branch pointer to the commit
+- they treat the index and working directory differently
+
+c1: file.txt (v1)
+c2: file.txt (v2)
+c3: file.txt (v3) (HEAD)
+staged: file.txt (v4)
+working: file.txt (v5)
+
+git reset --<mode> HEAD^
+
+Mode     | HEAD | Index | Working | Staged diff     | Unstaged diff
+---------+------+-------+---------+-----------------+------------------
+soft     | v2   | v4    | v5      | v4-v2           | v5-v4
+mixed    | v2   | v2    | v5      | v2-v2 (nothing) | v5-v2
+hard     | v2   | v2    | v2      | v2-v2 (nothing) | v2-v2 (nothing)
+
+- staged diff is always index vs HEAD
+- unstaged diff is always working vs index
+
+--soft
+-> leave index and working unchanged
+
+--mixed
+-> discard staged changes (index replaced with commit’s snapshot), leave working unchanged
+
+--hard
+-> discard staged changes and working changes (index and working replaced with commit’s snapshot)
+
+OR
+
+--soft -> move HEAD only
+HEAD   : v2   <- moved
+index  : v4   (unchanged)
+working: v5   (unchanged)
+
+--mixed -> move HEAD + reset index
+HEAD   : v2   <- moved
+index  : v2   <- replaced with commit snapshot
+working: v5   (unchanged)
+
+--hard -> move HEAD + reset index and working
+HEAD   : v2   <- moved
+index  : v2   <- replaced with commit snapshot
+working: v2   <- replaced with commit snapshot
+
+
 
 # ?
 
