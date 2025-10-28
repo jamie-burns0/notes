@@ -13,6 +13,8 @@ $vscode_home = "${tools_home}/vscode"
 $git_home = "${tools_home}/git"
 
 $env:Path = "${git_home}/bin;${vscode_home};" + $env:Path
+
+cd $notes_home
 ```
 
 

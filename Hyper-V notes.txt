@@ -58,12 +58,14 @@ Powershell (as self)
 podman run -it --rm quay.io/coreos/mkpasswd --method=yescrypt
 
 
-cd c:\dev\projects\system-build-files\fedora-coreos-ignition
-
 # create transpiled ignition config json file from butane config yaml file
+
+podman machine start
 
 $env:VM_NAME="fedora-coreos-hyperv"
 $env:VM_NAME="fedora-coreos-hyperv-2"
+
+cd c:\dev\projects\system-build-files\fedora-coreos-ignition
 
 Get-Content -Path .\$env:VM_NAME.bu.yaml | podman run --interactive --rm --volume .:/tmp/butane_files_dir quay.io/coreos/butane:release --pretty --strict --files-dir /tmp/butane_files_dir | Set-Content -Path ${env:VM_NAME}_transpiled_config.ign
 
@@ -76,8 +78,11 @@ Powershell (as administrator)
 
 $env:VM_NAME="fedora-coreos-hyperv"
 $env:VM_NAME="fedora-coreos-hyperv-2"
+
 $env:VHDX_FILE_NAME="fedora-coreos-40.20240416.3.1-hyperv.x86_64.vhdx"
 $env:VHDX_FILE_NAME="fedora-coreos-40.20240709.3.1-hyperv.x86_64.vhdx"
+$env:VHDX_FILE_NAME="fedora-coreos-42.20250803.3.0-hyperv.x86_64.vhdx"
+$env:VHDX_FILE_NAME="fedora-coreos-42.20250818.3.0-hyperv.x86_64.vhdx"
 $env:SWITCH_NAME="HostNetworkVirtualSwitch"
 
 $env:VM_HOME="c:\dev\work\virtual-machines\$env:VM_NAME\$env:VM_NAME"

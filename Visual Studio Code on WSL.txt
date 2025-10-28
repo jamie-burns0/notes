@@ -80,6 +80,16 @@ wsl --export $env:VM_NAME c:\dev\work\templates\$env:VM_NAME-base-$timestamp.tar
 wsl ~ -d $env:VM_NAME -e zsh
 
 
+# quarkus
+
+$timestamp="20240801-1002"
+$distro_name="kali-java-wsl"
+$vm_name="kali-redhat-quarkus-wsl"
+
+wsl --import $vm_name C:\dev\work\virtual-machines\$vm_name c:\dev\work\templates\$distro_name-base-$timestamp.tar
+
+
+
 $timestamp="20240508-1748"
 $vm_name="kali-java-wsl"
 
@@ -126,6 +136,25 @@ echo "# export JAVA_HOME=/opt/java/latest" | sudo tee /etc/profile.d/java.sh
 
 sudo chmod +x /etc/profile.d/java.sh
 source /etc/profile.d/java.sh
+
+RedHat OpenJDK
+- see learn-quarkus.md
+
+Maven
+- see learn-quarkus.md
+
+export maven_version=apache-maven-3.9.11
+export maven_download_filename=${maven_version}-bin.tar.gz
+
+cp /mnt/c/users/jamie/downloads/${maven_download_filename} /tmp
+sudo mkdir -p /opt/maven
+sudo tar xvf /tmp/${maven_download_filename} -C /opt/maven
+sudo ln -vfns /opt/maven/${maven_version} /opt/maven/latest
+
+rm /tmp/${maven_download_filename}
+
+JAVA_HOME=/opt/java/latest /opt/maven/latest/bin/mvn --version
+
 
 
 Gradle

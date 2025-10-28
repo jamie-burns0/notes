@@ -40,28 +40,30 @@ git config --global pull.ff only
 git config --global alias.slog "log --graph --all --topo-order --decorate --oneline"
 
 
-export GO_VERSION=1.23.1
-export GO_DOWNLOAD_FILENAME=go${GO_VERSION}.linux-amd64.tar.gz
-export GO_DOWNLOAD_URL=https://go.dev/dl/${GO_DOWNLOAD_FILENAME}
+go_version=1.23.1
+go_version=1.25.1
+go_download_filename=go${go_version}.linux-amd64.tar.gz
+go_download_url=https://go.dev/dl/${go_download_filename}
 
-wget ${GO_DOWNLOAD_URL} -P /tmp
+wget ${go_download_url} -P /tmp
 
 sudo mkdir /opt/go
 
-# we need the double-quotes for the ${GO_VERSION} to work in the transform expression
+# we need the double-quotes for the ${go_version} to work in the transform expression
 
-sudo tar --transform "s/^go/go${GO_VERSION}/" -xvf /tmp/${GO_DOWNLOAD_FILENAME} -C /opt/go
+sudo tar --transform "s/^go/go${go_version}/" -xvf /tmp/${go_download_filename} -C /opt/go
 
-sudo ln -vfns /opt/go/go${GO_VERSION} /opt/go/latest
+sudo ln -vfns /opt/go/go${go_version} /opt/go/latest
 
 # these will be installed at GOPATH /home/jamie/go or GOBIN if it is set
 - see https://blog.devtrovert.com/p/goroot-gopath-go-get-go-mod-tidy
-Should we set GOBIN to /opt/go/go1.23.1 so everything is together?
+Should we set GOBIN to /opt/go/go${go_version} so everything is together?
 
-/opt/go/go1.23.1/bin/go install -v golang.org/x/tools/gopls@latest
-/opt/go/go1.23.1/bin/go install -v github.com/go-delve/delve/cmd/dlv@latest
+/opt/go/go${go_version}/bin/go install -v golang.org/x/tools/gopls@latest
+/opt/go/go${go_version}/bin/go install -v github.com/go-delve/delve/cmd/dlv@latest
 
 
+# not using this
 
 sudo mkdir /usr/local/go
 

@@ -6,6 +6,7 @@ learn-go notes
 project_name=learn-go
 
 go_version=go1.23.1
+go_version=go1.25.1
 
 projects_home=/home/jamie/dev/projects
 project_home=$projects_home/go/learn-go

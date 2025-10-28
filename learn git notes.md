@@ -112,6 +112,14 @@ git log --patch -- path/to/file
 ```
 '--' is not a switch, it is a separator that tells git, "everything after this is a file path, not a branch or other option"
 
+# any occurance of a string in any file in any commit
+
+```
+git log -S"string to match" -p
+git log -G"regex to match" -p
+
+git log -G"case-insensitive regex to match" -i -p
+```
 
 # recover a deleted branch
 
