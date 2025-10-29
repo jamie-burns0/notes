@@ -36,7 +36,7 @@ cd $projects_home
 
 project_home=$projects_home/$project_name
 
-cd $project_home && code ../$project_name.code-workspace
+cd $project_home && code ../$project_name.code-workspace --profile "Quarkus"
 ```
 
 ## new quarkus project
@@ -64,6 +64,13 @@ rm -rf $projects_home/$project_name/mvnw* $projects_home/$project_name/.mvn/
 
 cd $project_home
 
+- we can use gh to create the remote repository from the command line
+- however we have to deal with auth tokens - what rights does our token need
+- then use "gh auth login" to login with our token
+- and then there will be a gh command to create the remote repository
+- FOR NOW, we create the repository on GitHub using the browser
+- then we continue the commands below
+
 git init -b main .
 git remote add origin git@github.com:jamie-burns0/learn-quarkus-01.git
 
@@ -74,7 +81,6 @@ git commit -m "create quarkus project"
 git fetch --all --prune
 git branch --set-upstream-to=origin/main main
 git pull --rebase
-
 git push
 ```
 
@@ -127,6 +133,71 @@ tee -a ${projects_home}/${project_name}.code-workspace > /dev/null <<EOT
 }
 EOT
 ```
+
+## add JPA support
+
+- https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.27/html/configure_data_sources/datasources
+
+```
+mvn quarkus:add-extension -Dextensions="hibernate-orm-panache, quarkus-jdbc-postgres"
+
+-- from RedHat registry.redhat.io
+- https://catalog.redhat.com/en/software/containers/rhel9/postgresql-16/657b03866783e1b1fb87e142#overview
+- worked first time
+- bigger image than alpine and smaller than crunchy
+
+redhat_username=...
+redhat_password="..."
+
+podman login -u $redhat_username -p $redhat_password registry.redhat.io
+podman pull registry.redhat.io/rhel9/postgresql-16:9.6
+
+podman volume create pgdata
+
+podman run --rm -d --name postgres \
+    -e POSTGRESQL_USER=developer \
+    -e POSTGRESQL_PASSWORD=developer \
+    -e POSTGRESQL_DATABASE=db \
+    -p 5432:5432 \
+    --mount type=volume,source=pgdata,destination=/var/lib/pgsql/data,Z \
+    rhel9/postgresql-16:9.6
+
+
+-- from Docker repository
+- see https://hub.docker.com/_/postgres
+- worked first time
+- small image if we use alpine
+- POSTGRES_USER defaults to postgres
+- POSTGRES_DB defaults to the value of POSTGRES_USER
+
+
+podman pull docker.io/library/postgres:alpine
+
+podman run --rm -d --name postgres \
+    -p 5432:5432 \
+    -e POSTGRES_PASSWORD=postgres \
+    docker.io/library/postgres:alpine
+
+podman logs postgres --follow
+
+
+-- from Red Hat registry.connect.redhat.com
+- this container did not start
+- might need to add -e POSTGRES_PASSWORD to the podman run command
+- its a large image
+
+redhat_username=...
+redhat_password="..."
+
+podman login -u $redhat_username -p $redhat_password registry.connect.redhat.com
+
+podman pull registry.connect.redhat.com/crunchydata/crunchy-postgres:ubi9-16.10-2542
+
+podman run --rm -d --name postgres \
+    -p 5432:5432 \
+    registry.connect.redhat.com/crunchydata/crunchy-postgres:ubi9-16.10-2542
+```
+
 
 ## build kali-quarkus-wsl
 
