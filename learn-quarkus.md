@@ -231,10 +231,39 @@ sudo apt install gh
 ## Red Hat build of Quarkus (RBOQ)
 
 ### podman
+
+Troubleshooting - see https://github.com/containers/podman/blob/main/troubleshooting.md
+
 ```
 sudo apt install podman
 podman --version
+
+echo "/ / none bind,rshared 0 0" | sudo tee -a /etc/fstab
 ```
+
+The command above addresses the following warning when starting postgresql in podman, 
+
+> "WARN[0000] "/" is not a shared mount, this could cause issues or missing mounts with rootless containers"
+
+From Claude,
+
+This warning is related to how Podman handles mount propagation in rootless mode. The warning occurs because your root filesystem (/) isn't configured as a shared mount, which can affect how volume mounts work with rootless containers.
+
+Solution 1: Make root filesystem a shared mount (Recommended)
+
+```
+sudo mount --make-rshared /
+```
+
+To make this permanent, add this to fstab:
+
+```
+echo "/ / none bind,rshared 0 0" | sudo tee -a /etc/fstab
+```
+
+For more information, see
+- https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html-single/managing_file_systems/index#creating-a-shared-mount-point-duplicate_sharing-a-mount-on-multiple-mount-points
+- https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html-single/system_design_guide/index#creating-a-shared-mount-point-duplicate_sharing-a-mount-on-multiple-mount-points
 
 ### Red Hat OpenJDK
 
