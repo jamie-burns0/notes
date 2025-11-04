@@ -162,6 +162,20 @@ podman run --rm -d --name postgres \
     --mount type=volume,source=pgdata,destination=/var/lib/pgsql/data,Z \
     rhel9/postgresql-16:9.6
 
+# Connect as postgres superuser (default superuser in PostgreSQL)
+podman exec -it postgres psql -U postgres -c "CREATE DATABASE devdb;"
+podman exec -it postgres psql -U postgres -c "CREATE DATABASE testdb;"  
+podman exec -it postgres psql -U postgres -c "CREATE DATABASE itdb;"
+podman exec -it postgres psql -U postgres -c "CREATE DATABASE proddb;"
+
+# Grant ownership to developer user
+podman exec -it postgres psql -U postgres -c "
+ALTER DATABASE devdb OWNER TO developer;
+ALTER DATABASE testdb OWNER TO developer;
+ALTER DATABASE itdb OWNER TO developer;
+ALTER DATABASE proddb OWNER TO developer;
+"
+
 
 -- from Docker repository
 - see https://hub.docker.com/_/postgres
