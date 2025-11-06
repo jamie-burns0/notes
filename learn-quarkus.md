@@ -2,20 +2,6 @@
 wsl ~ -d kali-redhat-quarkus-wsl -e zsh
 ```
 
-```
-java_version=latest
-maven_version=latest
-
-projects_home=/home/jamie/dev/projects
-
-export JAVA_HOME=/opt/java/$java_version
-export MAVEN_HOME=/opt/maven/$maven_version
-
-export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
-
-cd $projects_home
-```
-
 ## launch project
 
 ```
@@ -26,18 +12,38 @@ maven_version=latest
 
 dev_home=/home/jamie/dev
 projects_home=$dev_home/projects
+project_home=$projects_home/$project_name
 
 export JAVA_HOME=/opt/java/$java_version
 export MAVEN_HOME=/opt/maven/$maven_version
 
 export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
 
-cd $projects_home
-
-project_home=$projects_home/$project_name
-
 cd $project_home && code ../$project_name.code-workspace --profile "Quarkus"
 ```
+
+## build project
+
+```
+project_name=learn-quarkus-01
+
+java_version=latest
+maven_version=latest
+
+dev_home=/home/jamie/dev
+projects_home=$dev_home/projects
+project_home=$projects_home/$project_name
+
+export JAVA_HOME=/opt/java/$java_version
+export MAVEN_HOME=/opt/maven/$maven_version
+
+export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+
+cd $project_home
+
+mvn quarkus:dev
+```
+
 
 ## new quarkus project
 
@@ -46,45 +52,39 @@ cd $project_home && code ../$project_name.code-workspace --profile "Quarkus"
 - https://quarkus.io/version/3.27/guides/quarkus-maven-plugin
 
 ```
-project_name=learn-quarkus-01
+project_name=learn-quarkus-02
 
 quarkus_platform_version=3.27.0.redhat-00002
 
+java_version=latest
+maven_version=latest
+
+projects_home=/home/jamie/dev/projects
+project_home=$projects_home/$project_name
+
+export JAVA_HOME=/opt/java/$java_version
+export MAVEN_HOME=/opt/maven/$maven_version
+
+export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+
 cd $projects_home
 
+projectGroupId=me.jamieburns
+className=${projectGroupId}.MyResource
+myPath="/hello"
+
 mvn com.redhat.quarkus.platform:quarkus-maven-plugin:${quarkus_platform_version}:create \
-    -DprojectGroupId=jamieburns.me \
+    -DprojectGroupId=${projectGroupId} \
     -DprojectArtifactId=${project_name} \
     -DplatformGroupId=com.redhat.quarkus.platform \
     -DplatformVersion=${quarkus_platform_version} \
-    -DclassName="org.acme.quickstart.GreetingResource" \
-    -Dpath="/hello"
+    -DclassName="${className}" \
+    -Dpath="${myPath}"
 
 rm -rf $projects_home/$project_name/mvnw* $projects_home/$project_name/.mvn/
 
 cd $project_home
 
-- we can use gh to create the remote repository from the command line
-- however we have to deal with auth tokens - what rights does our token need
-- then use "gh auth login" to login with our token
-- and then there will be a gh command to create the remote repository
-- FOR NOW, we create the repository on GitHub using the browser
-- then we continue the commands below
-
-git init -b main .
-git remote add origin git@github.com:jamie-burns0/learn-quarkus-01.git
-
-git status
-git add .
-git commit -m "create quarkus project"
-
-git fetch --all --prune
-git branch --set-upstream-to=origin/main main
-git pull --rebase
-git push
-```
-
-```
 tee -a ${projects_home}/${project_name}.code-workspace > /dev/null <<EOT
 {
     "folders": [
@@ -123,15 +123,31 @@ tee -a ${projects_home}/${project_name}.code-workspace > /dev/null <<EOT
         "java.compile.nullAnalysis.mode": "automatic",
         "maven.executable.preferMavenWrapper": false,
         "maven.terminal.useJavaHome": true,
-        "java.import.gradle.enabled": false,
-        "java.import.gradle.wrapper.enabled": false,
-        "java.import.gradle.annotationProcessing.enabled": false,
-        "java.import.gradle.version": "8.9",
-        "java.import.gradle.java.home": "/opt/java/jdk-22.0.2",
-        "java.import.gradle.home": "/opt/gradle/gradle-8.9"
+        "workbench.startupEditor": "none"
     }
 }
 EOT
+```
+
+We can use gh to create the remote repository from the command line
+however we have to deal with auth tokens - what rights does our token need
+then use "gh auth login" to login with our token
+and then there will be a gh command to create the remote repository
+FOR NOW, we create the repository on GitHub using the browser
+then we continue the commands below
+
+```
+git init -b main .
+git remote add origin git@github.com:jamie-burns0/learn-quarkus-01.git
+
+git status
+git add .
+git commit -m "create quarkus project"
+
+git fetch --all --prune
+git branch --set-upstream-to=origin/main main
+git pull --rebase
+git push
 ```
 
 ## add JPA support
