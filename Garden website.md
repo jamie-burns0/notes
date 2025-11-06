@@ -1,4 +1,4 @@
-Garden website
+# Garden website
 
 https://www.howtographql.com/basics/3-big-picture/
 https://graphql.org/code/
@@ -20,6 +20,25 @@ https://neo4j.com/developer-blog/graphql-development-best-practices/
 https://tinkerpop.apache.org/docs/current/
 https://kelvinlawrence.net/book/Gremlin-Graph-Guide.html
 
+
+## The problem
+
+I want to create an application a person might use when exploring plants to plant in their garden. In my case, I want to create a catalogue of plants and invite users to take photos of plants they see in gardens in their area. I want to pin the photo to a plant species and a location. Users can then search for a plant and the app will return photos that is has of the plant in their area. The purpose of knowing the location is so that the user can then go to that location and see the plant for themselves rather than just relying on a photo
+
+### Domain Driven Design - Event Storming
+
+- https://miro.com/app/board/uXjVJvaToYI=/
+
+Events
+- A photo of a plant is taken at a location
+- A species of plant is identified at a location
+- A species of plant is added to the plant catalog
+- A photo of a plant is connected to a plant at a location
+- The various locations of a plant are shown
+- A location is visited
+- The plants at a particular location are shown
+
+## Other stuff
 
 kali linux
 
