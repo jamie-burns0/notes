@@ -1,0 +1,50 @@
+registry.connect.redhat.com
+
+crunchydata/crunchy-postgres
+
+registry.connect.redhat.com/crunchydata/crunchy-postgres@sha256:287f44500ebd330e59413128c6cc7da1af8fb771a86ad30fe8f04b2f4d675969
+
+sha256:287f44500ebd330e59413128c6cc7da1af8fb771a86ad30fe8f04b2f4d675969
+
+$ podman login registry.connect.redhat.com
+Username: {REGISTRY-SERVICE-ACCOUNT-USERNAME}
+Password: {REGISTRY-SERVICE-ACCOUNT-PASSWORD}
+Login Succeeded!
+
+$ podman pull registry.connect.redhat.com/crunchydata/crunchy-postgres:ubi9-16.10-2542
+
+
+
+$ podman login registry.connect.redhat.com
+Username: {REGISTRY-SERVICE-ACCOUNT-USERNAME}
+Password: {REGISTRY-SERVICE-ACCOUNT-PASSWORD}
+Login Succeeded!
+
+$ podman pull registry.connect.redhat.com/crunchydata/crunchy-postgres:ubi9-16.10-2542
+
+
+
+redhat_username=...
+redhat_password="..."
+
+podman login -u $redhat_username -p $redhat_password registry.connect.redhat.com
+
+podman pull registry.connect.redhat.com/crunchydata/crunchy-postgres:ubi9-16.10-2542
+
+podman run --rm -d --name postgres -p 5432:5432 registry.connect.redhat.com/crunchydata/crunchy-postgres:ubi9-16.10-2542
+
+podman pull docker.io/library/postgres:alpine
+
+podman run --rm -d --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=postgres docker.io/library/postgres:alpine
+
+podman logs postgres --follow
+
+
+
+
+podman login -u $redhat_username -p $redhat_password registry.redhat.io
+podman pull registry.redhat.io/rhel9/postgresql-16:9.6
+
+podman volume create pgdata
+
+podman run --rm --name postgresql_database -e POSTGRESQL_USER=developer -e POSTGRESQL_PASSWORD=developer -e POSTGRESQL_DATABASE=db -p 5432:5432 -v /home/jamie/postgresdata:/var/lib/pgsql/data:Z rhel9/postgresql-16:9.6
