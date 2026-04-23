@@ -1,0 +1,289 @@
+## curl commands
+
+$header1 = "..."
+$authorization = "..."
+
+curl.exe --insecure -X GET `
+--url http://host:port/path/to/service `
+-H "Content-Type: application/json" `
+-H "header1: ${header1}" `
+-H "Authorization: ${authorization}"
+
+
+
+$uri = "http://host:port/path/to/service"
+
+$var1 = "123456789"
+$var2 = "abc"
+
+$body = @{
+  a = @{
+    b = "ABCDE"
+    c = @{
+      d = "${var1}"
+    }
+    e = @{
+      f = @{
+        g = @{
+          h = "${var1}"
+        }
+        i = @{
+          j = "S262457X"
+          k = "${var2}"
+          m = $null
+        }
+      }
+    }
+  }
+} | ConvertTo-Json -Depth 10
+
+$headers = @{
+  "Content-Type" = "application/json"
+  "header1" = "${header1}"
+  "Authorization" = "${authorization}"
+}
+
+$response = Invoke-WebRequest -UseBasicParsing -Uri $uri -Method Post -Headers $headers -Body $body
+
+$response.Content
+
+
+
+
+$apihost = "hostname:port"
+$service = "serviceName"
+
+$headers = @{
+  "Content-Type" = "text/xml"
+  "SOAPAction" = "..."
+  "Accept" = "*/*"
+}
+
+$var1 = "123456789"
+$var2 = "ABCDE"
+
+$body = @"
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><... xmlns="...">...<abc>${var1}</abc>...</...></soap:Body></soap:Envelope>
+"@
+
+$url = "http://${apihost}/${service}"
+
+$response = Invoke-WebRequest -UseBasicParsing -Uri $url -Method Post -Headers $headers -Body $body
+
+Write-Output $response.Content
+
+
+
+## project notes
+
+# ... notes
+
+- reference1
+- ...
+
+
+## Environment
+
+```
+$project_name = "my-project"
+
+$java_version = "jdk-..."
+$maven_version = "apache-maven-..."
+
+$tools_home = "c:/dev/tools"
+$projects_home = "c:/dev/projects"
+
+$project_home = "$projects_home/$project_name"
+
+$env:JAVA_HOME = "$tools_home/$java_version"
+$env:MAVEN_HOME = "$tools_home/$maven_version"
+
+$git_home = "${tools_home}/Git"
+$env:HOME = $env:USERPROFILE
+
+$vim_home = "c:/dev/tools/vim/vim91"
+$vscode_home = "${tools_home}/vscode"
+
+$env:Path = "${vscode_home}/bin;${vim_home};${git_home}/bin;${git_home}/usr/bin;${git_home};" + $env:Path
+$env:Path = "$env:JAVA_HOME/bin;$env:MAVEN_HOME/bin;" + $env:Path
+```
+
+## Maven build
+
+```
+cd $project_home
+
+$skip_tests = "-Dmaven.test.skip=true"
+$skip_javadoc = "-Dmaven.javadoc.skip=true"
+
+clear ; mvn clean install $skip_javadoc $skip_tests
+```
+
+## Launch api
+
+```
+$env:VAR1 = "..."
+$env:VAR2 = "..."
+...
+
+$skip_tests = "-Dmaven.test.skip=true"
+$skip_javadoc = "-Dmaven.javadoc.skip=true"
+
+cd $project_home
+
+# run this before running liberty
+
+mvn package $skip_javadoc $skip_tests
+
+# run ...
+
+mvn ... $skip_tests $skip_javadoc -am "-DserverStartTimeout=120" "-DrecompileDependencies=false" "-DcompileWait=3000" "-DdebugPort=7778"
+```
+
+## Launch in vscode
+
+```
+cd $projects_home; code "$project_name.code-workspace" --profile "Java"
+```
+
+
+## Clone project
+
+```
+$project_name = "my-project"
+
+$repository_path = "path/to/repository/my-project.git"
+
+$projects_home = "c:/dev/projects"
+
+cd $projects_home
+
+git clone git-user@git-host:$repository_path $project_name
+```
+
+
+## Create code-workspace file
+
+@"
+{
+    "folders": [
+        {
+            "path": "$project_name"
+        }
+    ],
+    "settings": {
+		"java.project.explorer.showNonJavaResources": true,
+		"java.dependency.packagePresentation": "flat",
+		"java.configuration.updateBuildConfiguration": "disabled",
+		"java.configuration.detectJdksAtStart": false,
+		"java.compile.nullAnalysis.mode": "automatic",
+		"maven.executable.preferMavenWrapper": false,
+		"maven.terminal.useJavaHome": true,
+		"files.autoSave": "afterDelay",
+		"editor.inlayHints.enabled": "offUnlessPressed",
+		"editor.parameterHints.enabled": false,
+		"editor.quickSuggestions": {
+			"other": "off",
+			"comments": "off",
+			"strings": "off"
+		},
+		"editor.quickSuggestionsDelay": 3000,
+		"editor.inlineSuggest.showToolbar": "onHover",
+		"editor.inlineSuggest.enabled": false,
+		"editor.inlineSuggest.suppressSuggestions": true,
+		"editor.detectIndentation": false,
+		"editor.codeLens": false,
+		"editor.folding": false,
+		"editor.hover.enabled": "onKeyboardModifier",
+		"editor.hover.delay": 0,
+		"editor.lightbulb.enabled": "onCode",
+		"editor.minimap.enabled": true,
+		"editor.minimap.size": "fit",
+		"editor.snippetSuggestions": "none",
+		"editor.suggest.preview": false,
+		"java.signatureHelp.enabled": false,
+        "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m -Xlog:disable",
+        "java.autobuild.enabled": false,
+        "sonarlint.ls.javaHome": "c:\\dev\\tools\\jdk-..."
+    }
+}
+"@ | Add-Content -Path "$projects_home\$project_name.code-workspace"
+
+
+## VSCode launch configuration
+
+New-Item -ItemType Directory -Path "${project_home}/.vscode" -Force
+
+@"
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Attach to ...",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": "7778"
+        }
+    ]
+}
+"@ | Add-Content -Path "$project_home\.vscode\launch.json"
+
+
+
+## certificate notes - java
+
+
+### < Java 17
+
+Command prompt (self)
+
+set JAVA_HOME=c:\dev\tools\jdk-...
+
+set TOOLS_HOME=c:\dev\tools
+
+set CERT_FILENAME=my-cert-file.cer
+
+set CERT_FILE_PATH=%TOOLS_HOME%\%CERT_FILENAME%
+
+%JAVA_HOME%\bin\keytool -importcert -trustcacerts -keystore %JAVA_HOME%\lib\security\cacerts -storepass changeit -file %CERT_FILE_PATH%
+
+set ALIAS="my-cert-alias"
+
+%JAVA_HOME%\bin\keytool -importcert -trustcacerts -keystore %JAVA_HOME%\lib\security\cacerts -storepass changeit -file %CERT_FILE_PATH% -alias %ALIAS%
+
+
+### Java 17+
+
+Command prompt (self)
+
+set JAVA_HOME=c:\dev\tools\jdk-...
+
+
+set TOOLS_HOME=c:\dev\tools
+
+set CERT_FILENAME=my-cert-file.cer
+
+set CERT_FILE_PATH=%TOOLS_HOME%\%CERT_FILENAME%
+
+REM %JAVA_HOME%\bin\keytool -importcert -trustcacerts -cacerts -storepass changeit -file %CERT_FILE_PATH%
+
+
+set ALIAS="mykey"
+
+%JAVA_HOME%\bin\keytool -delete -alias %ALIAS% -cacerts -storepass changeit -noprompt
+
+%JAVA_HOME%\bin\keytool -importcert -alias %ALIAS% -trustcacerts -cacerts -storepass changeit -noprompt -file %CERT_FILE_PATH%
+
+%JAVA_HOME%\bin\keytool -importcert -trustcacerts -keystore %JAVA_HOME%\lib\security\cacerts -storepass changeit -file %CERT_FILE_PATH% -alias %ALIAS%
+
+
+set ALIAS="myAlias"
+
+set CERT_FILENAME=my-cert-file.crt
+
+set CERT_FILE_PATH=%TOOLS_HOME%\%CERT_FILENAME%
+
+%JAVA_HOME%\bin\keytool -delete -alias %ALIAS% -cacerts -storepass changeit -noprompt
+
+%JAVA_HOME%\bin\keytool -importcert -alias %ALIAS% -trustcacerts -cacerts -storepass changeit -noprompt -file %CERT_FILE_PATH%

@@ -5,7 +5,7 @@ wsl ~ -d kali-redhat-quarkus-wsl -e zsh
 ## launch project
 
 ```
-project_name=learn-quarkus-01
+project_name=learn-quarkus-02
 
 java_version=latest
 maven_version=latest
@@ -25,7 +25,7 @@ cd $project_home && code ../$project_name.code-workspace --profile "Quarkus"
 ## build project
 
 ```
-project_name=learn-quarkus-01
+project_name=learn-quarkus-02
 
 java_version=latest
 maven_version=latest
@@ -51,6 +51,8 @@ cd $project_home && QUARKUS_HTTP_PORT=8090 mvn quarkus:dev -Ddebug=5006
 - https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.27/html/getting_started_with_red_hat_build_of_quarkus/assembly_quarkus-getting-started#proc_quarkus-creating-proj
 - https://quarkus.io/version/3.27/guides/maven-tooling
 - https://quarkus.io/version/3.27/guides/quarkus-maven-plugin
+
+- https://code.quarkus.redhat.com
 
 ```
 project_name=learn-quarkus-02
@@ -128,6 +130,22 @@ tee -a ${projects_home}/${project_name}.code-workspace > /dev/null <<EOT
     }
 }
 EOT
+
+tee -a ${project_home}/.vscode/launch.json > /dev/null <<EOT
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Attach to ${project_name}",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": "5005"
+        }
+    ]
+}
+EOT
+
 ```
 
 We can use gh to create the remote repository from the command line
@@ -139,7 +157,7 @@ then we continue the commands below
 
 ```
 git init -b main .
-git remote add origin git@github.com:jamie-burns0/learn-quarkus-01.git
+git remote add origin git@github.com:jamie-burns0/learn-quarkus-02.git
 
 git status
 git add .
@@ -157,6 +175,8 @@ git push
 
 ```
 mvn quarkus:add-extension -Dextensions="hibernate-orm-panache, quarkus-jdbc-postgres"
+mvn quarkus:add-extension -Dextensions="quarkus-rest-jsonb"
+mvn quarkus:add-extension -Dextensions="smallrye-openapi"
 
 -- from RedHat registry.redhat.io
 - https://catalog.redhat.com/en/software/containers/rhel9/postgresql-16/657b03866783e1b1fb87e142#overview
