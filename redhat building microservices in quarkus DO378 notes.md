@@ -14,11 +14,11 @@ mvn com.redhat.quarkus.platform:quarkus-maven-plugin:3.8.3.redhat-00003:create \
 
 ## Extensions
 ```
-Database ORM          quarkus-hibernate-orm-panache         quarkus-hibernate-reactive-panache
+Database ORM          hibernate-orm-panache                 hibernate-reactive-panache
 Database driver       jdbc-postgresql                       reactive-pg-client
 
 REST                  resteasy-jackson                      resteasy-reactive-jackson
-REST client           quarkus-rest-client-jackson           quarkus-rest-client-reactive-jackson
+REST client           rest-client-jackson                   rest-client-reactive-jackson
 OpenAPI               smallrye-openapi                      ditto
 
 Messaging             smallrye-reactive-messaging-kafka     ditto
@@ -26,14 +26,14 @@ Messaging             smallrye-reactive-messaging-kafka     ditto
 JWT                   smallrye-jwt-build                    ditto
                       smallrye-jwt                          ditto
 
-SSO                   quarkus-oidc                           ditto
-                      quarkus-keycload-authorization         ditto
+SSO                   quarkus-oidc                          ditto
+                      quarkus-keycload-authorization        ditto
 
-OpenShift             quarkus-openshift                      ditto
+OpenShift             quarkus-openshift                     ditto
 
-Fault tolerance       smallrye-fault-tolerance               ditto
+Fault tolerance       smallrye-fault-tolerance              ditto
 
-Health                smallrye-health                        ditto
+Health                smallrye-health                       ditto
 ```
 
 ### Imperative, Blocking
@@ -45,6 +45,7 @@ mvn quarkus:add-extension -Dextensions="quarkus-hibernate-orm-panache, jdbc-post
 ```
 mvn quarkus:add-extension -Dextensions="quarkus-hibernate-reactive-panache, reactive-pg-client, resteasy-reactive, smallrye-openapi,smallrye-reactive-messaging-kafka"
 ```
+
 
 ## Dev services
 ```
@@ -67,9 +68,16 @@ public class Speaker extends PanacheEntity {
 }
 ```
 
-## REST
+## REST - imperative, blocking
 
 - https://quarkus.io/version/3.8/guides/rest-json
+- https://quarkus.io/version/3.8/guides/openapi-swaggerui
+
+### extensions
+```
+REST                  resteasy-jackson                      resteasy-reactive-jackson
+OpenAPI               smallrye-openapi
+```
 
 ### code
 ```
@@ -91,8 +99,16 @@ public class Resource {
 		description = "get list of speakers")
 	@APIResponse(
 		responseCode = "200",
-		description = "returns an list of speakers"
+		description = "a list of speakers",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON,
+            schema = @Schema(implementation=Park.class, type=SchemaType.ARRAY)
+        )
 	)
+    @APIResponse(
+        responseCode = "204",
+        description = "No parks found"
+    )
 	public List<Speaker> getSpeakerList() {
 		...
 		return List.of(...)
@@ -114,46 +130,181 @@ public class Resource {
 	}
 
 	@POST
+    @Transactional
 	public Entity createSpeaker(@QueryParam("speakerName") @DefaultValue("unknown") String speakerName) {
 		...
 	}
+
+    @PUT
+    @Transactional
+    public void update(Speaker incoming) {
+        Speaker.<Speaker>findByIdOptional(incoming.id)
+            .ifPresentOrElse(
+                existing -> {
+                    existing.name = incoming.name;
+                    ...
+                    existing.persist();
+                },
+                () -> {
+                    throw new NotFoundException();
+                }
+            );
+    }
 }
 ```
 
-## REST client
+## REST - reactive, non-blocking
+
+- https://quarkus.io/version/3.8/guides/resteasy-reactive
+- https://quarkus.io/version/3.8/guides/resteasy-reactive-migration
+- https://quarkus.io/version/3.8/guides/getting-started-reactive
+- https://quarkus.io/version/3.8/guides/quarkus-reactive-architecture
+
+### extensions
+```
+REST                  ---                      resteasy-reactive-jackson
+```
+
+### code - TODO
+```
+@Path("/endpoint")
+public class Resource {
+
+	@GET
+    ...
+	public List<Speaker> getSpeakerList() {
+		...
+		return List.of(...)
+	}
+
+	@POST
+	@Path("/{speakerName}")
+	@Transactional
+	public Entity createSpeaker(@PathParam("speakerName") String speakerName) {
+
+		Speaker s = new Speaker();
+		s.name = speakerName;
+	
+		s.persist();
+
+		return Response.created(...)
+			.header("id", s.id)
+			.build();
+	}
+
+	@POST
+    @Transactional
+	public Entity createSpeaker(@QueryParam("speakerName") @DefaultValue("unknown") String speakerName) {
+		...
+	}
+
+    @PUT
+    @Transactional
+    public void update(Speaker incoming) {
+        Speaker.<Speaker>findByIdOptional(incoming.id)
+            .ifPresentOrElse(
+                existing -> {
+                    existing.name = incoming.name;
+                    ...
+                    existing.persist();
+                },
+                () -> {
+                    throw new NotFoundException();
+                }
+            );
+    }
+}
+```
+
+
+## REST client - reactive and non-reactive
 
 - https://quarkus.io/version/3.8/guides/rest-client-reactive
 
-### application.properties
+### extensions
+
+- reactive extension handles both reactive and non-reactive code
+
 ```
-quarkus.rest-client.weather-service.url=http://localhost:8090
+REST client           -na-                   rest-client-reactive-jackson
 ```
 
-### code
+
+### application.properties
+```
+quarkus.rest-client.weather-client.url=http://localhost:8090
+```
+
+### code - imperative, blocking
 ```
 @Path("/warnings")
-@RegisterRestClient(configKey = "weather-service")
+@RegisterRestClient(configKey = "weather-client")
 public interface WeatherClient {
-	...
+    @GET
+    @Path("/{city})
+    public List<WeatherWarning> getWarningsByCity(@PathParam("city") String city);
+    ...
 }
 
 public class WeatherService {
 
 	@RestClient
-	WeatherClient weatherClient;
-
+	WeatherClient blockingWeatherClient;
 	...
+
+    void weatherWarningsByCity(String city) { // no return value
+        var warningList = blockingWeatherClient.getWarningsByCity(city)
+        for(WeatherWarning warning : warningList) {
+            ...
+        }
+    }
 }
 ```
 
-## Testing
+### code - reactive, non-blocking
+@Path("/warnings")
+@RegisterRestClient(configKey = "weather-client")
+public interface WeatherClient {
+    @GET
+    @Path("/{city})
+    public Uni<List<WeatherWarning>> ... // Uni<List<WeatherWarning> is a stream
+                                         // containing a single List<WeatherWarning>
+    ...
+}
+
+public class WeatherService {
+
+	@RestClient
+	WeatherClient nonblockingWeatherClient;
+	...
+
+    Uni<Void> weatherWarningsByCity(String city) { // must return Uni<Void>
+        return nonblockingWeatherClient.getWarningsByCity(city)
+            .onItem()
+            .invoke(
+                warningList -> {
+                    for(WeatherWarning warning : warningList) {
+                        ...
+                    }
+                }
+            )
+            .replaceWithVoid();
+    }
+}
+```
+
+## Unit testing
 
 - if the DO378 test harness, ```lab grade comprehensive-review```, reports no Surefire reports,
   then run ```mvn test```. Quarkus bypass Maven Surefire which is why we have no Surefire reports when we run ```mvn quarkus:dev``` or ```mvn quarkus:test```
 
+- https://quarkus.io/version/3.8/guides/getting-started-testing
+- https://github.com/rest-assured/rest-assured
+- https://quarkus.io/version/3.8/guides/tests-with-coverage
+
 ```
 @QuarkusTest
-public ParksResourceTest {
+class ParksResourceTest {
 
 	@Test
 	void getParksShouldReturn4Parks() {
@@ -161,11 +312,25 @@ public ParksResourceTest {
 			.when().get("/parks")
 			.then()
 				.statusCode(200)
-				.body("$.size()", is(4));
+                .body(not(emptyArray()))
+				.body("$.size()", is(4))
+                .body("[0].name", is(...));
 	}
 }
 ```
 
+## Integration testing
+
+- See section 16 at https://quarkus.io/version/3.8/guides/getting-started-testing
+
+```
+@QuarkusIntegrationTest
+class ParksResourceIT extends ParksResourceTest {
+    // TODO
+}
+```
+
+## Reactive
 
 ## Logging
 
@@ -211,8 +376,8 @@ public class Resource {
 ### application.properties
 ```
 quarkus.http.cors=true
-%dev.quarkus.http.cors.origins=http://localhost:9999
-%dev.quarkus.http.cors.methods=GET,POST
+%dev.quarkus.http.cors.origins=http://localhost:9000
+%dev.quarkus.http.cors.methods=GET,POST,PUT
 ```
 
 ## Securing - Authentication, Authorisation
@@ -221,14 +386,19 @@ quarkus.http.cors=true
 
 ### extensions
 ```
-JWT                   quarkus-smallrye-jwt
+JWT (consuming)       smallrye-jwt
+JWT (producing)       smallrye-jwt-build
 ```
 
 ### application.properties
 - we have copied public PEM files to ```src/main/resources```
 ```
-mp.jwt.verify.issuer=https://example.com/issuer
+# if we are consuming JWT
+mp.jwt.verify.issuer=parks-service
 mp.jwt.verify.publickey.location=publicKey.pem
+
+# if we are signing (producing) a JWT
+smallrye.jwt.sign.key.location=privateKey.pem
 
 # authorisation via properties
 quarkus.security.jaxrs.deny-unannotated-endpoints=true
@@ -297,6 +467,8 @@ JWT build             quarkus-smallrye-jwt-build
 ### application.properties
 we have copied private PEM files to ```src/main/resources```
 ```
+mp.jwt.verify.issuer=https://example.com/issuer
+mp.jwt.verify.publickey.location=publicKey.pem
 smallrye.jwt.sign.key.location=privateKey.pem
 ```
 
@@ -306,9 +478,9 @@ smallrye.jwt.sign.key.location=privateKey.pem
 public class JwtGenerator {
 
 	public String generateToken(String username) {
-		return Jwt.issuer("http://example.com/issuer")
+		return Jwt.issuer("https://example.com/issuer")
 			.upn(username)
-			.groups(Set.of("Admin"))
+			.groups(Set.of("User", "Admin"))
 			.claim(Claim.somekey, "some value")
 			.claim("a_key", "a_value")
 			.sign();
