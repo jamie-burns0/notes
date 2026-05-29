@@ -265,6 +265,7 @@ public class WeatherService {
 ```
 
 ### code - reactive, non-blocking
+```
 @Path("/warnings")
 @RegisterRestClient(configKey = "weather-client")
 public interface WeatherClient {
