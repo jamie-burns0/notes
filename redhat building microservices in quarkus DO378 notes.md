@@ -74,6 +74,9 @@ public class Speaker extends PanacheEntity {
 - https://quarkus.io/version/3.8/guides/openapi-swaggerui
 
 ### extensions
+
+- smallrye-openapi exposes q/openapi and q/swagger-ui
+
 ```
 REST                  resteasy-jackson                      resteasy-reactive-jackson
 OpenAPI               smallrye-openapi
@@ -155,9 +158,9 @@ public class Resource {
 
 ## REST - reactive, non-blocking
 
+- https://quarkus.io/version/3.8/guides/getting-started-reactive
 - https://quarkus.io/version/3.8/guides/resteasy-reactive
 - https://quarkus.io/version/3.8/guides/resteasy-reactive-migration
-- https://quarkus.io/version/3.8/guides/getting-started-reactive
 - https://quarkus.io/version/3.8/guides/quarkus-reactive-architecture
 
 ### extensions
@@ -330,7 +333,84 @@ class ParksResourceIT extends ParksResourceTest {
 }
 ```
 
-## Reactive
+## Reactive Messaging - Event Driven Architecture
+
+- https://quarkus.io/version/3.8/guides/kafka-reactive-getting-started
+- https://smallrye.io/smallrye-reactive-messaging/4.16.0/
+
+### extensions
+```
+Reactive messaging      smallrye-reactive-messaging
+                        smallrye-reactive-messaging-kafka
+```
+
+### notes
+
+- one channel binds/maps to exactly one topic
+- a channel is the MicroProfile Reactive Messaging name
+- a topic is the external kafka concept
+
+### application properties
+```
+kafka.bootstrap.servers = localhost:9092
+
+# Incoming Channel
+mp.messaging.incoming.an-incoming-channel.connector = smallrye-kafka
+mp.messaging.incoming.an-incoming-channel.topic = an-incoming-topic
+mp.messaging.incoming.an-incoming-channel.auto.offset.reset = earliest
+mp.messaging.incoming.an-incoming-channel.value.deserializer = my.package.serde.SomeEventDeserializer
+
+# Outgoing Channel
+mp.messaging.outgoing.an-outgoing-channel.connector = smallrye-kafka
+mp.messaging.outgoing.an-outgoing-channel.topic = an-outgoing-topic
+mp.messaging.outgoing.an-outgoing-channel.value.serializer = io.quarkus.kafka.client.serialization.ObjectMapperSerializer
+```
+
+### code
+```
+public record SomeEvent(String eventName, int eventSize) {}
+
+public class SomeEventDeserializer extends ObjectMapperDeserializer<SomeEvent> {
+    public SomeEventDeserializer() {
+        super(BankAccountWasCreated.class);
+    }
+}
+
+public class SomeResource {
+    
+    @Channel("some-channel-out")
+    Emitter<SomeEvent> emitter;
+
+    @POST
+    @Transactional
+    public void create(Thing thing) {
+        thing.persist();
+        emitter.send(new SomeEvent("created a thing", 1));
+    }
+}
+
+@ApplicationScoped
+public class SomeEventProcessor {
+
+    @Incoming("some-channel-in")
+    @ActivateRequestContext  // TODO: do i need this here
+    public Uni<Void> processSomeEvent(SomeEvent event) {
+        // do something with event
+        return Uni.createFrom().voidItem();
+    }
+}
+
+@ApplicationScoped
+public class StatusProducer {
+
+    @Outgoing("status-channel")
+    public Multi<StatusEvent> broadcastStatus() {
+        return Multi.createFrom().ticks().every(Duration.ofSeconds(15))
+            .map(tick -> new StatusEvent("healthy", Instant.now()));
+    }
+}
+```
+
 
 ## Logging
 
@@ -505,8 +585,11 @@ public class Service {
 - https://quarkus.io/version/3.8/guides/smallrye-health
 
 ### Extensions
+
+- exposes q/health
+
 ```
-Health                quarkus-smallrye-health
+mvn quarkus:add-extension -Dextensions="smallrye-health"
 ```
 
 ### code
@@ -545,9 +628,11 @@ public class Liveness implements HealthCheck {
 - https://quarkus.io/version/3.8/guides/telemetry-micrometer
 
 ### Extensions
+
+- exposes q/health in prometheus format
+
 ```
-Metrics               quarkus-micrometer
-                      quarkus-micrometer-registry-prometheus
+mvn quarkus:add-extension -Dextensions="quarkus-micrometer, quarkus-micrometer-registy-prometheus"
 ```
 
 ### application.properties
