@@ -52,10 +52,21 @@ mvn quarkus:add-extension -Dextensions="quarkus-hibernate-reactive-panache, reac
 quarkus.datasource.devservices.image-name=registry.ocp4.example.com:8443/redhattraining/do378-postgres:14.1
 ```
 
-## Active Record Pattern
+## Persistence - Panache Active Record Pattern
+
 The Active Record pattern attaches the methods that access an entity to the entity itself, thus giving the entity an active role in its persistence. This reduces the number of external classes that manage the persistent objects, such as repositories or entity managers. One of the benefits of this approach is that objects can be used in the same way you use any other Java object, making development more intuitive, faster, and easier.
 
 To use this pattern, extend your entities from PanacheEntity and use the methods directly on the entity instance, or the static methods inherited by your class.
+
+### application.properties
+```
+quarkus.datasource.db-kind = postgresql
+quarkus.datasource.username = ...
+quarkus.datasource.password = ...
+quarkus.datasource.jdbc.url = jdbc:postgresql://localhost:5432/mydatabase
+
+quarkus.hibernate-orm.database.generation = drop-and-create
+```
 
 ### code
 ```
@@ -65,6 +76,20 @@ public class Speaker extends PanacheEntity {
 	// public fields
 
 	// public no-arg constructor
+}
+
+public class SomeResource {
+    @GET
+    @Path("/things-found-in/{city}")
+    public List<Thing> thingsFoundInCity(
+        @PathParam("city") String city,
+        @QueryParam("page") @DefaultValue("0") int pageIndex,
+        @QueryParam("size") @DefaultValue(20) int pageSize)
+    {
+        return Thing.find("city", Sort.by("name"), city)
+                    .page(page, size)
+                    .list();
+    }
 }
 ```
 
@@ -168,53 +193,55 @@ public class Resource {
 REST                  ---                      resteasy-reactive-jackson
 ```
 
-### code - TODO
+### code
 ```
-@Path("/endpoint")
-public class Resource {
+@Path("/some-nonblocking-path")
+public class SomeNonblockingResource {
 
-	@GET
+    @GET
     ...
-	public List<Speaker> getSpeakerList() {
-		...
-		return List.of(...)
-	}
+    public Uni<List<Thing>> list() {
+        return Thing.listAll();
+    }
 
-	@POST
-	@Path("/{speakerName}")
-	@Transactional
-	public Entity createSpeaker(@PathParam("speakerName") String speakerName) {
-
-		Speaker s = new Speaker();
-		s.name = speakerName;
-	
-		s.persist();
-
-		return Response.created(...)
-			.header("id", s.id)
-			.build();
-	}
-
-	@POST
-    @Transactional
-	public Entity createSpeaker(@QueryParam("speakerName") @DefaultValue("unknown") String speakerName) {
-		...
-	}
+    @POST
+    ...
+    @WithTransaction
+    public Uni<Response> add(Thing newThing) {
+        return Thing.<Thing>findById(newThing.id)
+            .onItem()
+                .ifNotNull()
+                .failWith(() ->
+                    new WebApplicationException(
+                        "Thing already exists with id=" + newThing.id,
+                        Response.Status.CONFLICT
+                    )
+                )
+            .onItem()
+                .ifNull()
+                .continueWith(newThing)
+                .call(thing -> thing.persist())
+                .replaceWith(
+                    Response.status(Response.Status.CREATED)
+                        .entity(newThing)
+                        .build()
+                );
+    }
 
     @PUT
-    @Transactional
-    public void update(Speaker incoming) {
-        Speaker.<Speaker>findByIdOptional(incoming.id)
-            .ifPresentOrElse(
-                existing -> {
+    ...
+    @WithTransaction
+    public Uni<Response> update(Thing incoming) {
+        return Thing.<Thing>findById(incoming.id)
+            .onItem()
+                .ifNull()
+                    .failWith(NotFoundException::new)
+                .invoke(existing -> {
                     existing.name = incoming.name;
                     ...
-                    existing.persist();
-                },
-                () -> {
-                    throw new NotFoundException();
-                }
-            );
+                })
+                .call(existing -> existing.persist())
+                .replaceWith(Response.noContent().build());
     }
 }
 ```
@@ -735,3 +762,42 @@ public class Resource {
 }
 ```
 
+## Fault tolerance
+
+- https://quarkus.io/version/3.8/guides/smallrye-fault-tolerance
+
+### Extensions
+```
+mvn quarkus:add-extension -Dextensions="smallrye-fault-tolerance"
+```
+
+### code
+```
+class SomeResource {
+
+    @GET
+    @Retry( maxRetries = 2, retryOn = SomeException.class)
+    ...
+
+    @GET
+    @Timeout( 3000 )
+    public List<Thing> list() {
+        try {
+            return Thing.listAll();
+        } catch (TimeoutException e) {
+            // do something on timeout
+        }
+    }
+
+    @GET
+    @CircuitBreaker( requestVolumeThreshold = 4 )
+    @Fallback( fallbackMethod = "myFallbackMethod" )
+    public List<Thing> listByName(String name) {
+        ...
+    }
+
+    public List<Thing> myFallbackMethod(String name) {
+        // return a canned list of Thing
+    }
+}
+```
