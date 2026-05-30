@@ -440,42 +440,6 @@ public class StatusProducer {
 ```
 
 
-## Logging
-
-- https://quarkus.io/version/3.8/guides/logging#logging-format
-
-### Extensions
-```
-Logging               (built-in jboss logging)
-                      quarkus-logging-json
-```
-
-### application.properties
-```
-# logging
-quarkus.log.level=INFO
-quarkus.log.category."com.redhat.training.expense".level=DEBUG
-%dev.quarkus.log.file.enable=true
-%dev.quarkus.log.file.path=/home/student/DO378/monitor-logging/dev.logs
-%dev.quarkus.log.file.format=%d %-5p [%F] %m%n
-%dev.quarkus.log.file.rotation.rotate-on-boot=false
-%dev.quarkus.log.console.json=false
-%dev.quarkus.log.console.json.pretty-print=true
-```
-
-### code
-```
-...
-public class Resource {
-
-	@GET
-	public List<Speaker> getSpeakerList() {
-		Log.debug(message)
-		...
-	}
-}
-```
-
 ## Securing - TLS, CORS
 
 - https://quarkus.io/version/3.8/guides/security-cors
@@ -605,6 +569,43 @@ public class Service {
 	}
 }
 
+```
+
+
+## Logging
+
+- https://quarkus.io/version/3.8/guides/logging#logging-format
+
+### Extensions
+```
+Logging               (built-in jboss logging)
+                      quarkus-logging-json
+```
+
+### application.properties
+```
+# logging
+quarkus.log.level=INFO
+quarkus.log.category."com.redhat.training.expense".level=DEBUG
+%dev.quarkus.log.file.enable=true
+%dev.quarkus.log.file.path=/home/student/DO378/monitor-logging/dev.logs
+%dev.quarkus.log.file.format=%d %-5p [%F] %m%n
+%dev.quarkus.log.file.rotation.rotate-on-boot=false
+%dev.quarkus.log.console.json=false
+%dev.quarkus.log.console.json.pretty-print=true
+```
+
+### code
+```
+...
+public class Resource {
+
+	@GET
+	public List<Speaker> getSpeakerList() {
+		Log.debug(message)
+		...
+	}
+}
 ```
 
 
