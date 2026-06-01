@@ -68,7 +68,7 @@ public class SomeResource {
 
 mvn quarkus:add-extension -Dexceptions="smallrye-health"
 
-@Ready
+@Readiness
 @ApplicationScoped
 public class ReadyCheck extends HealthCheck {
     @Override

@@ -5,7 +5,7 @@ Opentelemetry: quarkus-opentelemetry
 
 ## Health
 
-@Ready
+@Readiness
 @ApplicationScoped
 public class ReadyCheck extends HealthCheck {
     @Override
@@ -58,7 +58,7 @@ public class SomeResource {
     }
 
     @GET
-    @CircuitBreaker(...Threshold = 4)
+    @CircuitBreaker(requestVolumeThreshold = 4)
     ...
 }
 
@@ -75,14 +75,20 @@ public class SomeResource {
     }
 
     @GET
+    @Counter("another.call.counter")
+    public List<Thing> anotherList() {
+        ...
+    }
+
+    @GET
     public List<Thing> timedList() {
-        registry.timer("timedList.timer").???()
+        return registry.timer("timedList.timer")
             .wrap(
                 (Supplier<List<Thing>>) () -> {
                     return ... // get our list of Thing
                 }
             )
-            .get()
+            .get();
     }
 
     // Guage: TODO
