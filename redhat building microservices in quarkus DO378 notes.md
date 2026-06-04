@@ -421,7 +421,6 @@ public class SomeResource {
 public class SomeEventProcessor {
 
     @Incoming("some-channel-in")
-    @ActivateRequestContext  // TODO: do i need this here
     public Uni<Void> processSomeEvent(SomeEvent event) {
         // do something with event
         return Uni.createFrom().voidItem();
