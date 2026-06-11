@@ -1,6 +1,6 @@
 Health: smallrye-health
 Fault tolerance: smallrye-fault-tolerance
-Metrics: quarkus-microprofile, quarkus-microprofile-registry-prometheus
+Metrics: quarkus-micrometer, quarkus-micrometer-registry-prometheus
 Opentelemetry: quarkus-opentelemetry
 
 ## Health
