@@ -407,13 +407,13 @@ public record SomeEvent(String eventName, int eventSize) {}
 
 public class SomeEventDeserializer extends ObjectMapperDeserializer<SomeEvent> {
     public SomeEventDeserializer() {
-        super(BankAccountWasCreated.class);
+        super(SomeEvent.class);
     }
 }
 
 public class SomeResource {
     
-    @Channel("some-channel-out")
+    @Channel("an-outgoing-channel")
     Emitter<SomeEvent> emitter;
 
     @POST
@@ -427,7 +427,7 @@ public class SomeResource {
 @ApplicationScoped
 public class SomeEventProcessor {
 
-    @Incoming("some-channel-in")
+    @Incoming("an-incoming-channel")
     public Uni<Void> processSomeEvent(SomeEvent event) {
         // do something with event
         return Uni.createFrom().voidItem();
