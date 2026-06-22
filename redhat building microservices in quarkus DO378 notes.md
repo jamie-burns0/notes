@@ -54,6 +54,9 @@ quarkus.datasource.devservices.image-name=registry.ocp4.example.com:8443/redhatt
 
 ## Persistence - Panache Active Record Pattern
 
+- https://quarkus.io/version/3.8/guides/hibernate-orm-panache
+- https://jakarta.ee/learn/docs/jakartaee-tutorial/current/persist/persistence-intro/persistence-intro.html
+
 The Active Record pattern attaches the methods that access an entity to the entity itself, thus giving the entity an active role in its persistence. This reduces the number of external classes that manage the persistent objects, such as repositories or entity managers. One of the benefits of this approach is that objects can be used in the same way you use any other Java object, making development more intuitive, faster, and easier.
 
 To use this pattern, extend your entities from PanacheEntity and use the methods directly on the entity instance, or the static methods inherited by your class.
@@ -64,6 +67,8 @@ quarkus.datasource.db-kind = postgresql
 quarkus.datasource.username = ...
 quarkus.datasource.password = ...
 quarkus.datasource.jdbc.url = jdbc:postgresql://localhost:5432/mydatabase
+
+quarkus.datasource.devservices.image-name=...
 
 quarkus.hibernate-orm.database.generation = drop-and-create
 ```
@@ -77,6 +82,8 @@ public class Speaker extends PanacheEntity {
 
 	// public no-arg constructor
 }
+
+@Entity class 
 
 public class SomeResource {
     @GET
