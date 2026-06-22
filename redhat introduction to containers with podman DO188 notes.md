@@ -1,7 +1,51 @@
 
-# podman notes
+# redhat introduction to containers with podman DO188 notes
+
+- https://www.redhat.com/en/topics/containers
+- https://opencontainers.org/about/overview/
+
+## Lifecycle of Applications in Red Hat OpenShift Container Platform
+
+### Kubernetes Overview
+
+- https://kubernetes.io/docs/home/
+
+Kubernetes is an orchestration service that simplifies the deployment, management, and scaling of containerized applications. It manages complex pools of resources, such as CPU, RAM, storage, and networking. Kubernetes provides high uptime and fault tolerance for containerized application deployments, removing the concern that developers might have regarding how their applications use resources.
+
+The smallest manageable unit in Kubernetes is a pod, which represents a single application and consists of one or more containers, including storage resources and an IP address.
+
+### Red Hat OpenShift Container Platform Overview
+
+- https://docs.redhat.com/en/documentation/openshift_container_platform/4.18
+
+Red Hat OpenShift Container Platform (RHOCP) is a set of modular components and services that are built on top of the Kubernetes container infrastructure. RHOCP adds capabilities to a production platform, such as remote management, multitenancy, increased security, monitoring and auditing, application lifecycle management, and self-service interfaces for developers.
+
+- Starts with the definition of a pod and the containers that it is composed of, which contain the application.
+- Pods are assigned to a healthy node.
+- Pods run until their containers exit.
+- Pods and their containers are removed from the node.
+
+## podman
+
 - https://podman.io/
+- https://docs.podman.io/en/stable/
 - https://podman-desktop.io/docs/intro
+
+```
+podman run --rm -d --name somename \
+    -p host-port:container-port \
+    -e SOMEVAR='some value' \
+    path-to-image:version \
+    command
+
+podman -v
+
+podman pull image-path:version
+
+podman images
+
+podman ps --all --format=json
+```
 
 # remote container development with visual studio code and podman
 - https://developers.redhat.com/articles/2023/02/14/remote-container-development-vs-code-and-podman#
