@@ -32,8 +32,9 @@ Red Hat OpenShift Container Platform (RHOCP) is a set of modular components and 
 - https://podman-desktop.io/docs/intro
 
 ```
-podman run --rm -d --name somename \
+podman run --rm -d --name some-container-name \
     -p host-port:container-port \
+    --net some-network,some-other-network
     -e SOMEVAR='some value' \
     path-to-image:version \
     command
@@ -47,6 +48,62 @@ podman images
 podman ps --all --format=json
 ```
 
+### podman network
+
+- https://github.com/podman-container-tools/podman/blob/main/docs/tutorials/basic_networking.md
+
+DNS hostname of a container is its container name. So for ```--name some-name```, the host name will be ```some-name```
+
+```
+podman network create some-network
+
+podman run ... --net some-network ...
+
+podman inspect my-app \
+  -f '{{.NetworkSettings.Networks.apps.IPAddress}}'
+```
+
+### port forwarding
+
+Without a host specified, the container is assigned the broadcast address (0.0.0.0). This means that the container is accessible from all networks on the host machine. To publish a container to a specific host and to limit the networks it is accessible from, use the following form, 
+
+```
+podman run -p 127.0.0.1:host-port:container-port my-app
+```
+
+```
+podman port --all
+```
+
+## container layers
+```
+ephemeral storage layer (RW)
+image layer n (RO)
+...
+image layer 1 (RO)
+image layer 0 (RO)
+```
+
+## start processes in containers
+
+### Execute command(s) in a running container
+```
+podman exec [options] container-name [command...]
+```
+
+### open an iteractive session in a running container
+```
+podman exec -it container-name /bin/bash
+```
+
+## copy files in and out of containers
+```
+podman cp [options] [container:]source/path [container:]/destination/path
+
+podman cp my-container:/tmp/logs ~/logs
+podman cp nginx.conf ngnix-container:/etc/nginx
+podman cp nginx-test:/etc/nginx/nginx.conf nginx-actual:/etc/nginx
+```
 # remote container development with visual studio code and podman
 - https://developers.redhat.com/articles/2023/02/14/remote-container-development-vs-code-and-podman#
 
