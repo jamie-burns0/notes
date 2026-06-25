@@ -104,6 +104,152 @@ podman cp my-container:/tmp/logs ~/logs
 podman cp nginx.conf ngnix-container:/etc/nginx
 podman cp nginx-test:/etc/nginx/nginx.conf nginx-actual:/etc/nginx
 ```
+
+## container lifecycle
+
+![container lifecycle diagram](./redhat-introduction-to-containers-with-podman-do188-notes/podman-lifecycle-commands.png)
+
+![podman query commands](./redhat-introduction-to-containers-with-podman-do188-notes/podman-query-commands.png)
+
+```
+podman ps --all
+
+podman inspect container-name|container-id
+podman inspect --format='{{...}}' ...  \\ see Go templating language link below
+
+# send SIGTERM signal to container
+podman stop container-name|container-id
+podman stop --all
+
+# send SIGKILL signal to container
+podman kill container-name|container-id
+
+# send SIGSTOP signal to container
+podman pause ...
+podman unpause ...
+
+podman restart ...
+
+# remove a stopped container
+podman rm --force|-f ...
+podman rm --all
+```
+
+- https://docs.podman.io/en/v5.2.2/markdown/podman-inspect.1.html
+- https://pkg.go.dev/text/template
+
+## Quadlets
+
+In a traditional environment, administrators configure applications such as web servers or databases to start at boot time, and run indefinitely as a systemd service. This is especially important in edge devices because containers need full lifecycle management, but a full orchestration solution might consume excessive computing resources.
+
+Systemd is a system and service management tool for Linux operating systems. Systemd uses service unit files to start and stop applications, or to enable them to start at boot time. Typically, an administrator manages these applications with the systemctl command.
+
+Quadlets bridge the integration between systemd and containers by enabling the creation of declarative configuration to manage containers as system applications.
+
+### The Quadlet Unit File
+
+- https://docs.podman.io/en/v5.2.2/markdown/podman-systemd.unit.5.html
+
+A Quadlet unit file is a systemd unit file, but with Podman-specific sections, such as ```[Container]```, to specify the Podman command arguments.
+
+The Quadlet files use the ```<serviceName>.container``` naming pattern. When you install Podman, it registers a systemd-generator tool that looks for files in the following directories to generate systemd unit files.
+
+```	
+$XDG_CONFIG_HOME/containers/systemd/ or ~/.config/containers/systemd/
+/etc/containers/systemd/users/$(UID)
+/etc/containers/systemd/users/
+```
+
+```
+# enable a Quadlet systemd unit for the current user
+systemctl --user daemon-reload
+
+# manage a user Quadlet service
+systemctl --user start|stop|status some-service-name.service
+
+# When you use the --user option, systemd starts the service when you log in, and stops it when you log out. You can avoid stopping your service when you log out by running the loginctl enable-linger command.
+
+loginctl enable-linger
+```
+
+## Container registries
+
+### Red Hat registry
+
+- https://catlog.redhat.com
+- https://catlog.redhat.com/software/containers/explore
+
+```
+# not authenticated
+registry.access.redhat.com
+
+# authenticated
+registry.redhat.io
+```
+
+Red Hat UBIs are Open Container Initiative (OCI) compliant enterprise grade container images that provide the base operating system layer for your containerized applications. UBIs include a subset of Red Hat Enterprise Linux (RHEL) components. UBIs can additionally provide a set of pre-built language runtimes. UBIs are freely distributable, and you can use UBIs on both Red Hat and non-Red Hat platforms or container registries.
+
+You do not need a Red Hat subscription to use or distribute UBI-based images. However, Red Hat only provides full support for containers built on UBI if the containers are deployed to a Red Hat platform, such as Red Hat OpenShift Container Platform (RHOCP) or RHEL.
+
+### quay.io
+
+- https://quay.io
+
+Although the Red Hat Registry only stores images from Red Hat and certified providers, you can use the Quay.io registry to store your custom images. Storing public images in Quay.io is free, and paying customers receive further benefits, such as private repositories. Developers can also deploy an on-premise Quay instance, which you can use to set up an image registry on your infrastructure.
+
+To log in to Quay.io, you can use your Red Hat developer account.
+
+### manage registries with podman
+
+- https://www.redhat.com/en/blog/manage-container-registries
+
+```
+podman pull registry.url/user|organisation/image-repository:image-tag
+
+podman pull registry.ocp4.example.com:8443/ubi9/ubi-minimal:9.5
+```
+
+If you do not provide the registry URL, then Podman uses the ```~/.config/containers/registries.conf``` or ```/etc/containers/registries.conf``` files to search other container registries that might contain the image name. These files contain registries that Podman searches to find the image, in order of preference. The user-defined ```~/.config/containers/registries.conf``` file overrides the global ```/etc/containers/registries.conf``` file.
+
+Red Hat recommends that you always use a fully qualified container image name to avoid using images from unintended container registries. For example, depending on your Podman configuration, the ```ubi9/ubi-minimal:9.5``` container image might resolve to a potentially unsupported or malicious ```docker.io/library/ubi9/ubi-minimal:9.5``` container image.
+
+If Podman matches the short image name in several registries, then it prompts the user to select which to use.
+
+### manage registries with skopeo
+
+- https://github.com/podman-container-tools/skopeo
+- https://www.redhat.com/en/blog/manage-container-registries
+- https://developers.redhat.com/articles/2025/09/24/skopeo-unsung-hero-linux-container-tools
+
+Skopeo can inspect remote images or transfer images between registries without using local storage. The skopeo command uses the transport:image format - docker, oci, dir,...
+
+```
+skopeo inspect docker://registry.access.redhat.com/ubi9/nodejs-18
+skopeo copy docker://registry.access.redhat.com/ubi9/nodejs-18 docker://quay.io/myuser/nodejs-18
+skopeo copy docker://registry.access.redhat.com/ubi9/nodejs-18 dir:/var/lib/images/nodejs-18
+```
+
+### manage registry credentials with podman
+
+Some registries require users to authenticate, such as the registry.redhat.io registry. Authenticate your calls by executing the podman login command.
+
+```
+podman login registry.redhat.io
+...
+podman pull registry.redhat.io/rhel8/httpd-24
+```
+
+Podman stores the credentials in the ```${XDG_RUNTIME_DIR}/containers/auth.json``` file, where the ```${XDG_RUNTIME_DIR}``` refers to a directory specific to the current user. The credentials are encoded in the base64 format
+
+```
+cat ${XDG_RUNTIME_DIR}/containers/auth.json
+echo -n dXN...XIy | base64 -d
+```
+
+Skopeo uses the same ```${XDG_RUNTIME_DIR}/containers/auth.json``` file to access authentication details for each registry.
+
+
+
 # remote container development with visual studio code and podman
 - https://developers.redhat.com/articles/2023/02/14/remote-container-development-vs-code-and-podman#
 
