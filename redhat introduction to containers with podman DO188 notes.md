@@ -256,9 +256,11 @@ Skopeo uses the same ```${XDG_RUNTIME_DIR}/containers/auth.json``` file to acces
 
 One way to version images relative to their packaged software product is to use semantic versioning. Semantic version numbers form a string with the format MAJOR.MINOR.PATCH meaning:
 
+```
 MAJOR: backward incompatible changes
 MINOR: backward compatible changes
 PATCH: bug fixes
+```
 
 Because versioning has no enforced structure, it is up to the image maintainers to follow good versioning practices.
 
