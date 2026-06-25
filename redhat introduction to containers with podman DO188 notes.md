@@ -204,7 +204,7 @@ To log in to Quay.io, you can use your Red Hat developer account.
 - https://www.redhat.com/en/blog/manage-container-registries
 
 ```
-podman pull registry.url/user|organisation/image-repository:image-tag
+podman pull registry.url/namespace/image-repository:image-tag
 
 podman pull registry.ocp4.example.com:8443/ubi9/ubi-minimal:9.5
 ```
@@ -247,6 +247,102 @@ echo -n dXN...XIy | base64 -d
 ```
 
 Skopeo uses the same ```${XDG_RUNTIME_DIR}/containers/auth.json``` file to access authentication details for each registry.
+
+## managing images
+
+### Image Versioning and Tags
+
+- https://docs.podman.io/en/stable/markdown/podman-tag.1.html
+
+One way to version images relative to their packaged software product is to use semantic versioning. Semantic version numbers form a string with the format MAJOR.MINOR.PATCH meaning:
+
+MAJOR: backward incompatible changes
+MINOR: backward compatible changes
+PATCH: bug fixes
+
+Because versioning has no enforced structure, it is up to the image maintainers to follow good versioning practices.
+
+Image versions can be used in the image name or in the image tag. An image tag is a string that you specify after the image name. Also, the same image can have multiple tags.
+
+```
+podman image tag simple-server simple-server:0.1
+```
+
+### search for images
+
+To search for images in different image registries, use a web browser to go to the registry URL and use the web UI.
+
+Alternatively, use the podman search command to search for images in all the registries present in the ```unqualified-search-registries``` list in your ```registries.conf``` file. This enables you to search multiple registries.
+
+```
+podman search nginx
+podman search registry.example.com:8443/developer/
+```
+
+Add private registries to the default search list by including them in the ```unqualified-search-registries``` list in the ```~/.config/containers/registries.conf``` file.
+
+```
+unqualified-search-registries = ['registry.example.com:8443', 'registry.redhat.io', 'docker.io']
+```
+
+### building images
+
+You can also build an image from a Containerfile, which describes the steps used to build an image. Run the ```podman build --file CONTAINERFILE --tag IMAGE_REFERENCE``` to build a container image.
+
+For example, to build an image that you can later push to Red Hat Quay.io, execute the following command:
+
+```
+podman build --file Containerfile --tag quay.io/YOUR_QUAY_USER/IMAGE_NAME:TAG
+```
+
+### pushing images
+
+After you build an image, share it by pushing it to a remote registry. To push an image, you must be logged in to the registry. Run the ```podman login REGISTRY``` to log in to the specified registry. Then, you can use the ```podman push IMAGE``` command to push a local image to the remote registry.
+
+```
+podman push quay.io/YOUR_QUAY_USER/IMAGE_NAME:TAG
+```
+
+### inspecting images
+
+```
+podman image inspect registry.redhat.io/rhel8/rariadb-103:1 --format='{{...}}'
+```
+
+### removing images
+
+```
+podman image rm -f REGISTRY/NAMESPACE/IMAGE_NAME:TAG
+
+podman image rm --all
+
+# remove dangling images
+podman image prune
+
+# remove dangling and unused images
+podman image prune -a
+```
+
+### export and import containers
+
+The podman export command exports a container to a tar file on your local machine. This command creates a snapshot of an existing container, referenced by the CONTAINER_ID. You can use the podman export command to create snapshots for containers as a backup method, but note that Podman squashes the image layers into a single layer and removes the metadata from the image.
+
+```
+podman export --output mytarfile.tar container-id
+
+podman import mytarfile.tar image-name:tag
+```
+
+### export and import container IMAGES
+
+To export and import a container image you can use the podman save and podman load commands respectively. The podman save command, unlike podman export, keeps the original image layers and metadata, such as the image history or labels.
+
+```
+podman save --output my-container-image.tar registry/namespace/image-name:tag
+
+podman load --input my-container-image.tar
+```
+
 
 
 
