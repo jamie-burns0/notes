@@ -327,7 +327,7 @@ podman image prune -a
 
 ### export and import containers
 
-The podman export command exports a container to a tar file on your local machine. This command creates a snapshot of an existing container, referenced by the CONTAINER_ID. You can use the podman export command to create snapshots for containers as a backup method, but note that Podman squashes the image layers into a single layer and removes the metadata from the image.
+The podman export command exports a container to a tar file on your local machine. This command creates a snapshot of an existing container, referenced by the CONTAINER_ID. You can use the podman export command to create snapshots for containers as a backup method, __but note that Podman squashes the image layers into a single layer and removes the metadata from the image__.
 
 ```
 podman export --output mytarfile.tar container-id
@@ -337,7 +337,7 @@ podman import mytarfile.tar image-name:tag
 
 ### export and import container IMAGES
 
-To export and import a container image you can use the podman save and podman load commands respectively. The podman save command, unlike podman export, keeps the original image layers and metadata, such as the image history or labels.
+To export and import a container image you can use the podman save and podman load commands respectively. The podman save command, unlike podman export, __keeps the original image layers and metadata__, such as the image history or labels.
 
 ```
 podman save --output my-container-image.tar registry/namespace/image-name:tag
