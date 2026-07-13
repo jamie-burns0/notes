@@ -345,7 +345,138 @@ podman save --output my-container-image.tar registry/namespace/image-name:tag
 podman load --input my-container-image.tar
 ```
 
+## Containerfile
 
+- https://github.com/containers/common/blob/main/docs/Containerfile.5.md
+- https://developers.redhat.com/articles/2021/11/11/best-practices-building-images-pass-red-hat-container-certification
+- https://opensource.com/article/21/8/container-image
+
+```
+podman build -t image-name:tag -f ./Containerfile
+```
+
+```
+# This is a comment line
+FROM        registry.redhat.io/ubi8/ubi:8.6
+
+LABEL       description="This is a custom httpd container image"
+
+RUN         yum install -y httpd && \
+            yum install -y something-else
+
+ENV         SERVER_PORT=80
+
+EXPOSE      ${SERVER_PORT}
+
+ENV         LogLevel "info" \
+            MY_ENV="some value"
+
+ADD         http://someserver.com/filename.pdf /var/www/html
+
+COPY        ./src/   /var/www/html/
+
+USER        apache
+
+ENTRYPOINT  ["/usr/sbin/httpd"]
+CMD         ["-D", "FOREGROUND"]
+```
+
+```
+FROM .../ubi9/nodejs-22-minimal:1
+
+LABEL org.opencontainers.image.authors="..."
+LABEL com.example.version="0.0.1"
+
+ENV SERVER_PORT=3000
+ENV NODE_ENV="production"
+
+EXPOSE ${SERVER_PORT}
+
+WORKDIR /path/inside/the/container
+USER 1000
+
+COPY . .
+
+RUN npm install
+
+CMD npm start
+```
+
+```
+podman build ... --build-arg MY_KEY="my value"
+```
+
+```
+# ARGs are passed into the build-time environment
+
+ARG VERSION="1.1.0" \
+    MY_KEY="default value"
+
+# ENVs are passed into the container's runtime environment
+
+ENV VERSION=${VERSION} \
+    MY_KEY=${MY_KEY}
+    
+RUN ... some-command -Dmykey=${MY_KEY} ...
+```
+
+```
+# create an anonymous volume that exists for the life of the container
+
+VOLUME /var/lib/pgsql/data
+```
+
+```
+FROM .../ubi8/ubi-minimal:8.5
+
+USER 1000
+
+# arguments passed to the container are appended to the entry point
+ENTRYPOINT ["echo", "Hello"]
+
+# if no arguments are passed to the container, use the default arguments
+ENTRYPOINT ["echo", "Hello"]
+CMD ["Red Hat"]
+
+# arguments passed to the container override this
+CMD ["echo", "Hello", "Red Hat"]
+
+# array/exec form
+# - direct exec
+# - no shell involved
+# - process becomes PID 1
+# - signals go directly to the process
+# - arguments behave predictably
+# - ENTRYPOINT and CMD combine correctly
+ENTRYPOINT ["executable", "arg1"]
+
+# string/shell form
+# - runs as /bin/sh -c "executable arg1"
+# - shell-form ENTRYPOINT ignores CMD entirely
+# - shell expansion occurs *** the ONLY REASON we would use string form
+#   - $VAR expansion
+#   - $(command) substitution
+#   - pipes (|)
+#   - redirects (>, >>)
+#   - && / || chaining
+#   - globbing (*.log)
+# - shell becomes PID 1, executable a child process
+# - signals might not reach the executable process
+ENTRYPOINT executable arg1
+```
+
+```
+# First stage
+FROM registry.access.redhat.com/ubi8/nodejs-14:1 as builder
+COPY ./ /opt/app-root/src/
+RUN npm install
+RUN npm run build
+
+# Second stage
+FROM registry.access.redhat.com/ubi8/nginx-120
+COPY --from=builder /opt/app-root/src/ /usr/share/nginx/html
+...
+```
 
 
 # remote container development with visual studio code and podman
