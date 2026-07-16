@@ -355,6 +355,8 @@ podman load --input my-container-image.tar
 podman build -t image-name:tag -f ./Containerfile
 ```
 
+Each RUN, COPY and ADD create a copy-on-write (COW) layer. Chain these if you can
+
 ```
 # This is a comment line
 FROM        registry.redhat.io/ubi8/ubi:8.6
@@ -402,30 +404,107 @@ RUN npm install
 CMD npm start
 ```
 
+### ARG and ENV
 ```
-podman build ... --build-arg MY_KEY="my value"
-```
+podman build ... --build-arg ARG_1="some value"
+podman run ... -e KEY_2="another value" ...
 
-```
 # ARGs are passed into the build-time environment
 
 ARG VERSION="1.1.0" \
-    MY_KEY="default value"
+   ARG_1="default value"
 
 # ENVs are passed into the container's runtime environment
 
 ENV VERSION=${VERSION} \
-    MY_KEY=${MY_KEY}
+    KEY_1=${MY_KEY} \
+    KEY_2="default value"
     
-RUN ... some-command -Dmykey=${MY_KEY} ...
+RUN ... some-command -Dkey2=${KEY_2} ...
+
+System.getenv("KEY_1");
+System.getenv("KEY_2");
+System.getProperty("key2");
+
+@ConfigProperty(name = "KEY_1")
+@ConfigProperty(name = "KEY_2")
+@ConfigProperty(name = "key2")
 ```
 
+Use environment variables when:
+- You want runtime overrides (podman run -e KEY=value)
+- You want platform-level config (Kubernetes ConfigMap, Podman env)
+- You want 12‑factor style configuration
+- You want to avoid baking values into the image
+
+Use system properties when:
+- You want to configure Java libraries or frameworks (MicroProfile, Quarkus, Spring Boot)
+- You want to override defaults inside the JVM
+- You want fine-grained control over Java behaviour
+- You want to map env vars → system properties
+
+```
+ENV APP_PORT=8080
+ENTRYPOINT ["java", "-Dapp.port=${APP_PORT}", "-jar", "/app/app.jar"]
+
+This gives you
+- externalised config (ENV)
+- Java-native access (System.getProperties("app.port"))
+- cloud-native Java framework (@ConfigProperty(name = "APP_PORT"))
+- runtime overrides (podman run -e APP_PORT=9090)
+```
+
+Build‑time configuration (ARG → ENV)
+```
+ARG ARG_1="default value"
+ENV KEY_1=${ARG_1}
+
+podman build --build-arg ARG_1="some value" .
+```
+
+Result
+- ARG_1 exists only during the build.
+- KEY_1 is baked into the final image.
+- At runtime, the container sees ```KEY_1=some value```
+
+This is the correct pattern when you want:
+- a default baked into the image
+- the ability to override it at build time
+- a stable runtime value that does not change unless you rebuild
+
+This is ideal for things like:
+- build‑time feature flags
+- selecting dependencies
+- embedding version metadata
+- non‑secret configuration that should be fixed per image
+
+Runtime configuration (ENV → runtime override)
+```
+ENV KEY_2="default value"
+
+podman run -e KEY_2="another value" myimage
+```
+
+Result
+- KEY_2 defaults to "default value"
+- You can override it at runtime
+- No rebuild required
+
+This is ideal for:
+- ports
+- log levels
+- database URLs
+- anything environment‑specific
+- anything secret (passed via -e, not baked into the image)
+
+### VOLUME
 ```
 # create an anonymous volume that exists for the life of the container
 
 VOLUME /var/lib/pgsql/data
 ```
 
+### ENTRYPOINT and CMD
 ```
 FROM .../ubi8/ubi-minimal:8.5
 
@@ -465,6 +544,61 @@ ENTRYPOINT ["executable", "arg1"]
 ENTRYPOINT executable arg1
 ```
 
+### Podman secrets
+
+```
+# from a file
+
+echo "R3d4ht123" > dbsecretfile
+podman secret create dbsecret dbsecretfile
+
+# from STDIN (the hyphen (-) tells podman to read from STDIN)
+
+printf "R3d4ht123" | podman secret create dbsecret2 -
+
+podman secret create ... --driver=file|pass|shell
+
+podman secret ls
+podman secret rm secret-name
+
+podman run ... --secret secret-name ...
+podman run ... --secret secret-name,type=env,target=DB_SECRET ...
+```
+
+```
+printf "super-secret-password" | podman secret create dbpassword -
+
+# mounts the secret file to the secrets mount point
+
+podman run --secret dbpassword my-quarkus-app
+
+# Containerfile
+# - maps the secrets mount point to the system env variable
+
+FROM quay.io/quarkus/quarkus-micro-image:2.16
+WORKDIR /app
+COPY target/quarkus-app/ /app/
+ENV QUARKUS_DATASOURCE_PASSWORD_FILE=/run/secrets/dbpassword
+ENTRYPOINT ["java", "-jar", "/app/quarkus-run.jar"]
+
+# application.properties
+# - reads the secret file and maps the value to the quarkus environment variable
+
+quarkus.datasource.username=dbuser
+quarkus.datasource.password-file=${QUARKUS_DATASOURCE_PASSWORD_FILE}
+
+# code
+# - maps the quarkus environment variable to a field
+
+@ApplicationScoped
+public class DbPasswordConfig {
+    @ConfigProperty(name = "quarkus.datasource.password")
+    String dbPassword;
+    ...
+}
+```
+
+### multi-stage build
 ```
 # First stage
 FROM registry.access.redhat.com/ubi8/nodejs-14:1 as builder
