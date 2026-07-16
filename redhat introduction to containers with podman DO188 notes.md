@@ -612,6 +612,58 @@ COPY --from=builder /opt/app-root/src/ /usr/share/nginx/html
 ...
 ```
 
+## Rootless podman
+
+```
+FROM registry.access.redhat.com/ubi9/ubi
+
+RUN adduser \
+   --no-create-home \
+   --system \
+   --shell /usr/sbin/nologin \
+   python-server
+
+USER python-server
+...
+```
+
+```
+sudo touch /etc/{subuid,subgid}
+sudo usermod --add-subuids 100000-165536 --add-subgids 100000-165536 student
+cat /etc/subuid /etc/subgid
+podman system migrate
+```
+
+```
+HOST                             | CONTAINER
+                                 |
+Subordinate uids                 | Computed user namespace
+/etc/subuid                      | /proc/self/uid_map
+                                 |
+host user : first host   : range | first container : host uid : range
+            subordinate          | uid
+            uid in range         |
+                                 | 2 x records for each host uid
+                                 | cuid : huid   : range
+student : 100000 : 65536         | 0    : 1000   : 1
+(1000)                           | 1    : 100000 : 65536
+                                 |
+jamie   : 165536 : 65536         | 0    : 5000   : 1
+(5000)                           | 1    : 165536 : 65536
+...
+note: max linux users = 65536
+
+Map container user id N to host user id
+
+first subordinate uid           container
+for host user that        +     user id     -  1
+launches podman run             (9999)
+process (student)
+
+  100000                  +     N           -  1
+= 100000                  +     9999        -  1
+= 109998
+```
 
 # remote container development with visual studio code and podman
 - https://developers.redhat.com/articles/2023/02/14/remote-container-development-vs-code-and-podman#
