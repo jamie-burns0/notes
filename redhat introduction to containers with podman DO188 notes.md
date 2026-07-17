@@ -665,6 +665,68 @@ process (student)
 = 109998
 ```
 
+## Volume mounting
+
+- Volumes are data mounts managed by podman
+- Bind mounts are data mounts managed by the user
+- ```--mount``` is preferred over ```--volume```
+- https://www.redhat.com/en/blog/user-namespaces-selinux-rootless-containers
+
+```
+podman run ... --mount type=bind|volume|tmpfs,source=...,destination=...,options
+
+# user-managed bind mount
+
+podman run ... --mount type=bind,source=/path/on/host,destination=/path/in/container,relabel=private|shared
+
+# podman-managed volume mount
+
+podman volume create my-volume
+podman run ... --mount type=volume,source=my-volume,destination=/path/in/container
+
+# tmpfs
+
+podman run ... --mount type=tmpfs,tmpfs-size=512M,destination=/var/lib/my-data/data ...
+```
+
+### podman unshare
+
+The ```podman unshare``` command executes provided Linux commands in a new namespace such as the one Podman creates for the container. This process maps user IDs as they are mapped in a new container, which is useful for troubleshooting user permissions.
+
+```
+podman unshare
+
+podman unshare ls -l /www
+podman unshare ls -ld /www
+podman unshare ls -Zd /www
+
+system_u:object_r:default_t:... /www
+```
+
+To access a __bind mount__, a container must have the SELinux type, ```container_file_t```. To fix a bind mount where the SELinux type is ```default_t```, add the ```relabel=shared (:z)``` or ```relabel=private (:Z)``` option:
+- ```shared (:z)``` lets different containers share access to a bind mount.
+- ```private (:Z)``` provides the container with exclusive access to the bind mount.
+
+```
+podman run ... --mount type=bind,...,relabel=shared ...
+podman run ... --mount type=bind,...,relabel=private ...
+```
+
+### exporting and importing data with volumes
+
+```
+podman volume create my-data
+
+podman volume import my-data my-data.tar.gz
+
+podman volume export my-data --output my-data.tar
+podman volume export my-data | gzip > my-data.tar.gz
+```
+
+## working with databases
+
+
+
 # remote container development with visual studio code and podman
 - https://developers.redhat.com/articles/2023/02/14/remote-container-development-vs-code-and-podman#
 
