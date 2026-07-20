@@ -725,7 +725,222 @@ podman volume export my-data | gzip > my-data.tar.gz
 
 ## working with databases
 
+- On start, containers based on the ```rhel8/postgresql-12``` image run any scripts that end in .sh, found in the ```/opt/app-root/src/postgresql-start``` directory.
+- The ```/var/lib/pgsql/data``` is the directory where the ```rhel8/postgresql-12``` image is configured to store the database files.
 
+```
+podman volume create rpi-store-data
+
+podman run -d \
+  --name persisting-pg12 \
+  -e POSTGRESQL_USER=backend \
+  -e POSTGRESQL_PASSWORD=secret_pass \
+  -e POSTGRESQL_DATABASE=rpi-store \
+  -v rpi-store-data:/var/lib/pgsql/data \
+  -v ~/DO188/labs/persisting-databases:/opt/app-root/src/postgresql-start:Z \
+  registry.ocp4.example.com:8443/rhel8/postgresql-12:1-113
+
+podman exec -it persisting-pg12 \
+  psql -d rpi-store -c "select * from model"
+
+podman rm -f persisting-pg12
+
+podman run -d \
+  --name persisting-pg12 \
+  -e POSTGRESQL_USER=backend \
+  -e POSTGRESQL_PASSWORD=secret_pass \
+  -e POSTGRESQL_DATABASE=rpi-store \
+  -v rpi-store-data:/var/lib/pgsql/data \
+  registry.ocp4.example.com:8443/rhel8/postgresql-12:1-113
+```
+
+### with pgAdmin
+
+```
+podman rm -f persisting-pg12
+
+podman network create persisting-network
+
+podman run -d \
+  --name persisting-pg12 \
+  -e POSTGRESQL_USER=backend \
+  -e POSTGRESQL_PASSWORD=secret_pass \
+  -e POSTGRESQL_DATABASE=rpi-store \
+  -v rpi-store-data:/var/lib/pgsql/data \
+  --network persisting-network \
+  registry.ocp4.example.com:8443/rhel8/postgresql-12:1-113
+
+podman run -d \
+  --name persisting-pgadmin \
+  -e PGADMIN_SETUP_EMAIL=gls@example.com \
+  -e PGADMIN_SETUP_PASSWORD=pga_secret_pass \
+  -p 5050:5050 \
+  --network persisting-network \
+  registry.ocp4.example.com:8443/crunchydata/crunchy-pgadmin4:ubi8-4.30-1
+
+http://localhost:5050
+```
+
+### migrate data to a PostgreSQL 13 container
+
+```
+podman exec persisting-pg12 \
+  pg_dump -Fc rpi-store -f /tmp/db_dump
+
+podman cp persisting-pg12:/tmp/db_dump /tmp/db_dump
+
+podman stop persisting-pg12
+
+podman volume create rpi-store-data-pg13
+
+podman run -d \
+  --name persisting-pg13 \
+  -e POSTGRESQL_USER=backend \
+  -e POSTGRESQL_PASSWORD=secret_pass \
+  -e POSTGRESQL_DATABASE=rpi-store \
+  -v rpi-store-data-pg13:/var/lib/pgsql/data \
+  registry.ocp4.example.com:8443/rhel9/postgresql-13:1
+
+podman cp /tmp/db_dump persisting-pg13:/tmp/db_dump
+
+podman exec persisting-pg13 \
+  pg_restore -d rpi-store /tmp/db_dump
+
+podman exec -it persisting-pg13 \
+  psql -d rpi-store -c "select * from model"
+
+podman rm persisting-pg12
+podman volume rm rpi-store-data
+```
+
+## container logging and troubleshooting
+
+```
+podman logs smart-home-api
+
+# what network is the container connected to
+podman inspect smart-home-db --format='{{.NetworkSettings.Networks}}'
+
+# is DNS enabled
+podman network inspect troubleshooting-lab
+
+# is the other container connected to the same network
+podman inspect smart-home-api --format='{{.NetworkSettings.Networks}}'
+
+# what ports 
+podman exec smart-home-api ss -pant
+
+podman inspect smart-home-api --format '{{State.Pid}}'
+sudo nsenter -t <container pid> -n ss -pant
+
+# what file permissions
+podman exec smart-home-api ls -l /config/
+ls -Z automations.yaml
+```
+
+## remote debugging
+
+```
+podman run --name remote-debug ... -p <remote debug port>:<remote debug port> \
+  --mount type=bind,source=/host/path/to/code,destination=/container/path/to/code ...
+
+podman logs remote-debug
+...
+Debugger listening on ...:9229 ...
+```
+
+### codium launch configuration
+
+```
+cd /host/path/to/code
+codium .
+
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Debug remote-debug",
+            "port": 9229,
+            "address": "localhost",
+            "localRoot": "${workspaceFolder}",
+            "remoteRoot": "/"
+        }
+    ]
+}
+```
+
+## orchestrate containers with Podman Compose
+
+Podman Compose is an open source tool that you can use to run Compose files. A Compose file is a YAML file that specifies the containers to manage, as well as the dependencies among them.
+
+- requires Podman 5.2.2
+
+```
+podman --version
+pip install podman-compose
+
+# install latest development version
+pip install https://github.com/containers/podman-compose/archive/devel.tar.gz
+
+podman-compose up [--detach] [--force-recreate] [--remove-orphans]
+podman-compose down
+```
+
+### compose file
+
+The Compose file is a YAML file that contains the following sections:
+- version (deprecated): Specifies the Compose version used
+- services: Defines the containers used
+- networks: Defines the networks used by the containers
+- volumes: Specifies the volumes used by the containers
+- configs: Specifies the configurations used by the containers
+- secrets: Defines the secrets used by the containers
+
+The secrets and configs objects are mounted as a file in the containers.
+
+```
+services:
+  frontend:
+    image: quay.io/example/frontend
+    networks:
+      - app-net
+    ports:
+      - "8082:8080"
+  backend:
+    image: quay.io/example/backend
+    networks:
+      - app-net
+      - db-net
+  db:
+    image: registry.redhat.io/rhel8/postgresql-13
+    environment:
+      POSTGRESQL_ADMIN_PASSWORD: redhat
+    networks: 
+      - db-net
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-vol:/var/lib/postgresql/data
+      - ./local/bind/mount:/var/lib/postgresql/data2:Z
+
+networks:
+  app-net: {}
+  db-net: {}
+
+volumes:
+  db-vol: {}
+  my-volume:
+    external: true
+```
+
+### podman pods
+
+```
+podman generate kube
+podman play kube
+```
 
 # remote container development with visual studio code and podman
 - https://developers.redhat.com/articles/2023/02/14/remote-container-development-vs-code-and-podman#
