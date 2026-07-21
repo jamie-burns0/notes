@@ -908,15 +908,20 @@ services:
       - app-net
     ports:
       - "8082:8080"
+    depends-on:
+      - backend
   backend:
     image: quay.io/example/backend
     networks:
       - app-net
       - db-net
+    depends-on:
+      - db
   db:
     image: registry.redhat.io/rhel8/postgresql-13
     environment:
       POSTGRESQL_ADMIN_PASSWORD: redhat
+      POSTGRESQL_ADMIN_METADATA: some-metadata
     networks: 
       - db-net
     ports:
@@ -940,6 +945,156 @@ volumes:
 ```
 podman generate kube
 podman play kube
+```
+
+## Deploy applications in openshift
+
+- Red Hat OpenShift Container Platform (RHOCP)
+- managed, self-managed
+
+### RHOCP CLI
+
+```
+oc login -u developer -p developer https://api.ocp4.example.com:6443
+oc project ocp-applications
+oc get pod
+oc create -f pod.yaml
+oc delete pod quotes-ui
+oc logs react-ui
+oc explain pod.metadata.name
+oc get pod --selector group=developers
+
+# create pod imperatively
+oc run example-pod \
+  --image=quay.io/example/awesome-container \
+  --env GREETING='Hello from the awesome container' \
+  --port=8080
+
+# imperative commands to generate pod object definition (declarative)
+oc run example-pod \
+  --image=quay.io/example/awesome-container \
+  --env GREETING='Hello from the awesome container' \
+  --port=8080 \
+  --dry-run=client -o yaml
+
+# create services imperatively
+oc expose pod backend-app \
+  --port=8080 \
+  --targetPort=8080 \
+  --name=backend-app
+  
+# with --dry-run generates a service definition
+  --dry-run=client -o yaml
+```
+
+### RHOCP resources
+
+```
+# create pod declaratively
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: example-pod
+  namespace: example-project
+  labels:
+    app: example-pod
+    group: developers
+spec:
+  containers:
+  - name: example-container
+    image: quay.io/example/awesome-container
+    ports:
+    - containerPort: 8080
+    env:
+    - name: GREETING
+      value: "Hello from the awesome container"
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    # target pods labelled app=backend-app
+    app: backend-app      
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2022-08-19T12:59:22Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: cri-o://e37c....f5c2
+    image: quay.io/example/awesome-container:latest
+    lastState: {}
+    name: podman-quotes-ui
+    ready: true
+...object omitted...
+```
+
+## Manage pods with controllers
+
+### imperatively
+
+```
+oc create deployment example-deployment \
+  --image=quay.io/example/awesome-container \
+  --replicas=3
+```
+
+### declaratively
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: deployment-label
+  name: example-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example-deployment
+  strategy: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: example-deployment
+    spec:
+      containers:
+      - image: quay.io/example/awesome-container
+        name: awesome-pod
+```
+
+## Expose Applications for External Access
+
+### create routes imperatively
+
+Note that you can use the oc expose imperative command in the following forms:
+- ```oc expose pod POD_NAME```: create a service for a specific pod.
+- ```oc expose deployment DEPLOYMENT_NAME```: create a service for all pods managed by a controller, in this case a deployment controller.
+- ```oc expose service SERVICE_NAME```: create a route that targets the specified service.
+
+```
+oc expose service app-ui
+```
+
+### create routes declaratively
+
+```
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: app-ui
+  name: app-ui
+  namespace: awesome-app
+spec:
+  port:
+    targetPort: 8080
+  host: ""
+  to:
+    kind: "Service"
+    name: "app-ui"
 ```
 
 # remote container development with visual studio code and podman
