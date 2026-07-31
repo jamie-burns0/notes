@@ -72,7 +72,12 @@ Red Hat OpenShift provides an internal DNS server that adds automatic DNS servic
 #### Security Context Constraints
 In addition to hardening and providing finer role-based user control, Red Hat OpenShift provides Security Context Constraints (SCC), which control pod permissions.
 
-## Deploying Applications with oc new-app
+## oc openshift client
+
+- ```oc``` followed by ```<tab><tab>``` will list options. Repeat ```<tab><tab>``` after each option to get completion options.
+- when we reach a list of files, ```--help | less``` to get command doc and examples
+
+### Deploying Applications with oc new-app
 
 The oc new-app command provides the following options to customize the application build:
 
@@ -93,6 +98,7 @@ The oc new-app command provides the following options to customize the applicati
 oc login -u developer -p developer https://api.ocp4.example.com:6443
 oc project deploy-cli
 oc new-app --name=weather registry.ocp4.example.com:8443/redhattraining/openshift-dev-deploy-cli-weather:1.0
+oc new-app --name=... -e VAR_NAME=varvalue ...
 oc get all
 oc expose --name=weather service/openshift-dev-deploy-cli-weather
 oc get route weather
@@ -217,3 +223,355 @@ The final image names have the following pattern:
 ```ImageRegistry/DevfileName-ImageName:UniqueId```
 
 You can verify the results by inspecting the image registry where odo creates the images or by inspecting the Kubernetes sources that odo creates in the cluster.
+
+
+## Building container images for openshift
+
+- see https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html-single/images/index#creating-images
+
+- ```man containerfile```
+
+- https://catalog.redhat.com/en/search?searchType=containers
+
+### Build and Push Images with Podman
+
+You can use a tool such as Podman to build a container image locally and push the image to a container registry.
+
+### universal base images
+
+- https://catalog.redhat.com/en/software/base-images
+- https://developers.redhat.com/articles/ubi-faq#overview
+
+```
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+...
+```
+
+| Image name | Uses |
+|:-|:-|
+| ubi |	For most applications and use cases |
+| ubi-init | For containers that run multiple systemd services |
+| ubi-minimal | Smaller image for applications that manage their own dependencies and depend on fewer OS components |
+| ubi-micro | Smallest image for optimized memory-footprint use cases; for applications that use almost no OS components |
+
+As well as the four main UBI images, Red Hat provides specific UBI images for popular runtimes - OpenJDK, Node.js, Python,...
+
+For each runtime, Red Hat provides images for each supported major version of the runtime. For example, Red Hat provides the ```ubi10/nodejs-22``` image, which extends the standard ```ubi10/ubi``` image by adding the Node.js runtime. Meanwhile, the ```ubi10/nodejs-22-minimal``` image is based on the ```ubi10/ubi-minimal``` UBI.
+
+### CrashLoopBackoff
+
+The container exited with a non-zero return code
+
+- check the logs via web console or ```oc logs```
+- check the events 
+- start in debug mode
+  - does not run ENTRYPOINT
+  - starts a shell where you can explore the environment and manually run the entrypoint
+
+```
+oc logs ...
+oc events ...??
+oc debug ...
+```
+
+### Add Support for Arbitrary Nonroot Users
+
+- https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html-single/images/index#use-uid_create-images
+
+Adding the following RUN instruction to your Containerfile recursively sets the permissions of a directory to allow users in the root group to access this directory and its contents in the container.
+
+```
+RUN chgrp -R 0 directory && \
+    chmod -R g=u directory
+```
+
+By default, Red Hat OpenShift does not use the ```USER``` instruction set by a container image. For security reasons, OpenShift instead uses a random user ID other than the root user ID (0) to run containers. Additionally, OpenShift makes this random user a member of the root group, which corresponds to the 0 group ID. This approach mitigates the risk of container processes escalating privileges on the cluster nodes due to security vulnerabilities in the container engine.
+
+When you create or update the Containerfile of an image that runs on OpenShift, address the following aspects:
+
+- The root group (group ID 0) must own the directories and files where the processes that run in the container read or write
+- The root group must have read and write permissions for these files and directories
+- The root group must have execute permissions for application binaries
+- Because they do not run as privileged users, container processes must not listen on privileged ports, which are ports below 1024.
+
+### Expose Ports
+
+Expose nonprivileged ports with the EXPOSE instruction.
+
+__*Do not expose ports below 1024*__, which require privileged access.
+
+On Red Hat OpenShift, the oc new-app command uses the EXPOSE value of the image. For example, if the EXPOSE value is 3001, then oc new-app sets 3001 as the port used in the definition of the Deployment and Service resources. This mechanism also supports multiple ports in a single EXPOSE instruction.
+
+### Ensure That Your Containers Handle Interruption Signals
+
+OpenShift sends a SIGTERM signal to the processes in the container to terminate an application. OpenShift expects application instances to shut down gracefully before the cluster removes the instances from the load balancer.
+
+The application might require additional procedures during shutdown. For example, this might include closing all open connections, releasing resources, or committing open data transactions. It is up to the application to handle such cases.
+
+If the application uses a complex procedure to initialize, then developers commonly put the logic in the entrypoint script. The entrypoint script is responsible for passing the SIGTERM signal to the application, such as in the following example:
+
+```
+#!/bin/env bash
+
+function graceful_shutdown() {
+  kill -SIGTERM "$java_pid"
+  wait "$java_pid"
+  exit 0
+}
+
+# Trap the SIGTERM signal
+trap graceful_shutdown SIGTERM
+
+...script omitted...
+
+# Start the application
+java -jar example.jar &
+java_pid=$!
+
+...script omitted...
+
+# Wait for the process to finish
+wait "$java_pid"
+```
+
+Additionally, you can use the preStop pod lifecycle hook to initiate a graceful shutdown of your application, such as in the following example:
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example-pod
+spec:
+  containers:
+    - name: my-container
+      image: example.com/myimage
+      lifecycle:
+        preStop:
+          httpGet:
+            path: /shutdown
+            port: 8080
+```
+
+This is useful when you cannot handle the SIGTERM signal in your application. If a process does not exit after receiving the SIGTERM signal, then OpenShift waits until the termination period expires, and sends a SIGKILL signal to the process. This signal immediately ends the process
+
+### Reduce Image Size
+
+- Avoid having too many RUN instructions in a Containerfile. Whenever possible, combine multiple commands into a single RUN instruction.
+
+- Exclude files and directories from the build context. Create a ```.containerignore```file in the build context directory to prevent unnecessary files and directories from being copied into the image.
+
+- Use multistage Containerfiles. With this approach, you can use the first stage of the Containerfile to build the application, and then copy the artifacts to the final stage, which includes only the necessary runtime dependencies. The resulting image is often smaller than regular single-stage images, which use the same stage for building and running the application.
+
+### Use a Minimal Image
+
+Whenever possible, use a minimal UBI image to slim down the size of your containers. Note that the name of minimal images might differ, based on the runtime. For example, Node.js UBI images use names such as ```nodejs-22-minimal```, but the OpenJDK UBI images call this concept *runtime-only* images, as in ```ubi9/openjdk-21-runtime```.
+
+If you use a multistage build, then use a __*standard UBI image as the initial builder stage*__, such as ubi10/nodejs-22. Then, use a __*minimal image*__ for the last stage, such as ubi10/nodejs-22-minimal to reduce the size of the resulting image.
+
+### Define Metadata Labels
+
+- see https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html-single/images/index#defining-image-metadata
+
+Use the ```LABEL``` instruction to define information, warnings, and suggestions that OpenShift can display to users.
+
+OpenShift supports a number of metadata labels. Label names are namespaced with the io.openshift or io.k8s prefixes. The OpenShift tooling parses these labels and provides them as additional information in the OpenShift UI. For example, you can define the io.openshift.min-cpu label to make the OpenShift UI warn users about the minimum number of CPUs that an image requires:
+
+```
+LABEL io.openshift.min-cpu 2
+```
+
+### Use Working directories
+
+Red Hat recommends using absolute paths in WORKDIR instructions. Use WORKDIR instead of multiple RUN instructions where you change directories and then run some commands. This approach ensures better maintainability and is easier to troubleshoot.
+
+### Set Environment variables
+
+Use ENV instructions to define file and directory paths instead of reusing fixed paths in Containerfile instructions. Environment variables are useful to define application configuration, store information such as software version numbers, and also to append directories to the PATH environment variable.
+
+Using the ARG instruction to set environment variables at build time is also a supported way to create reusable container images that run on OpenShift.
+
+### Declare Volumes
+
+Red Hat recommends the explicit definition of volumes in Containerfiles, by using the VOLUME instruction. Defining the VOLUME instruction makes it easy for image consumers to understand what volumes they can define when running your image.
+
+By default, when OpenShift processes an image that contains a VOLUME instruction in its metadata, it attaches an ephemeral volume of type EmptyDir at that location. Pods of the same deployment never share EmptyDir volumes, and when OpenShift removes the pod, it also deletes the volume.
+
+## Authenticating OpenShift with Private Registries
+
+- https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+(NOTE: we can use ```oc``` in place of ```kubectl```)
+- https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+
+### guided exercise
+
+#### with wrong credentials
+
+```
+oc login -u developer -p developer https://api.ocp4.example.com:6443
+oc project images-registry
+oc create secret docker-registry wrong-registry-credentials \
+  --docker-server=registry.ocp4.example.com:8443 \
+  --docker-username=developer \
+  --docker-password=developeradsfasdfasdfa \
+  --docker-email=developer@example.org
+oc secrets link default wrong-registry-credentials --for=pull
+oc create deployment hello-world-nginx --image=registry.ocp4.example.com:8443/redhattraining/hello-world-nginx:latest
+oc get pod <--- ImagePullBackOff
+oc get event --field-selector type=Warning -o jsonpath='{range .items[]}{.message}{"\n"}{end}'  <--- Failed to pull image ... invalid username/password: unauthorized: ...
+```
+
+#### with right credentials
+
+- Go to ```https://registry.ocp4.example.com:8443``` and log in using the user ```developer``` with the password ```developer```.
+- Click ```develop…​ > Account Settings``` to open the developer account settings.
+- Click the robot icon in the left sidebar to open the ```Robot Accounts``` page.
+- Click ```Create Robot Account```
+- Use ```ocprobot``` as the username for the new robot account
+- Click ```Create robot account``` to finish the process. You can safely skip the Add permissions for ```developer+ocprobot``` step by clicking ```Close```.
+- Click ```developer+ocprobot``` to open the robot credentials page.
+- Copy the authentication token within the ```Username & Robot Account``` section.
+
+```
+oc create secret docker-registry registry-credentials \ <--- secret_type secret_name
+  --docker-server=registry.ocp4.example.com:8443 \
+  --docker-username=developer+ocprobot \ <--- robot account
+  --docker-password=F3SX3... \ <--- copied authentication token
+  --docker-email=developer@example.org
+
+oc secrets unlink default wrong-registry-credentials
+c secrets link default registry-credentials --for=pull
+
+oc delete pod -l app=hello-world-nginx
+oc get pod <--- Running
+
+oc get event --sort-by='.lastTimestamp' <--- Successfully pulled image ...
+```
+
+### Creating Registry Credentials in OpenShift
+
+To allow OpenShift to use an external registry, store credentials for authentication on the registry in OpenShift and associate the credentials with your service account.
+
+create a generic secret, which contains the user key with the developer value. Objects in the example-ns project can refer to that secret
+
+```
+oc create secret generic example-secret \
+  --from-literal=user=developer \
+  --namespace=example-ns
+```
+
+Kubernetes provides the docker-registry secret type to store credentials for authentication with the container registry.
+
+```
+oc create secret docker-registry SECRET_NAME \
+  --docker-server REGISTRY_URL \
+  --docker-username USER \
+  --docker-password PASSWORD \
+  --docker-email=EMAIL
+```
+
+You can also create the secret from existing credentials. For example, if you logged in to the private registry with Podman, then you have existing credentials in the ```${XDG_RUNTIME_DIR}/containers/auth.json``` file. Because the auth.json file uses the same structure as the ```.dockerconfigjson``` file, you can create the secret by using the ```auth.json``` file.
+
+```
+oc create secret generic SECRET_NAME \
+--from-file .dockerconfigjson=${XDG_RUNTIME_DIR}/containers/auth.json \
+  --type kubernetes.io/dockerconfigjson
+```
+
+You can also upload the ```auth.json``` file in the OpenShift console when creating the secret.
+
+### Configuring OpenShift to Use the Registry Credentials
+
+You can configure OpenShift to use custom credentials by using the spec.imagePullSecrets Pod property, for example:
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example-pod
+spec:
+  containers:
+  - name: example-container
+    image: REGISTRY_URL
+  imagePullSecrets:
+  - name: SECRET_NAME
+```
+
+Consequently, you can use the property for controllers, such as the Deployment objects:
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: example-container
+          image: REGISTRY_URL
+      imagePullSecrets:
+        - name: SECRET_NAME
+```
+
+### Linking Registry Credentials to Service Accounts
+
+Instead of manually assigning the credentials to pods, you can configure OpenShift to assign the credentials to pods automatically by using service accounts. A service account provides an identity for pods. Pods use the default service account unless you configure a different service account.
+
+Use the oc secrets link command to connect a secret with a service account, for example:
+
+```
+oc secrets link --for=pull default SECRET_NAME
+```
+
+The preceding command creates a new entry in the service account ```imagePullSecrets``` field:
+
+```
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: default
+imagePullSecrets:
+- name: SECRET_NAME
+```
+
+When you create a pod that uses the ```default``` service account, it inherits the ```imagePullSecrets``` field without you explicitly specifying the field in the pod definition.
+
+This means that every pod that uses the ```default``` service account is authorized with the registry credentials in your secret.
+
+## image stream
+
+- a pointer to a container image ( is --> registry --> ci )
+- an Image Stream does __NOT__ contain the actual image data
+- https://www.redhat.com/en/blog/image-streams-faq
+- https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html-single/images/index#about-containers-images-and-image-streams
+- Image streams are an OpenShift specific resource that you can use to reference container images by using an intermediate name that points to an image from a container registry.
+- An Image Stream contains all of the metadata information about any given image that is specified in the Image Stream specification. It points either to an external registry, like registry.access.redhat.com, hub.docker.com, etc., or to OpenShift's internal registry (if one is deployed in your cluster)
+
+```
+oc describe is php -n openshift
+
+oc import-image myimagestream --confirm --scheduled=true --from example.com/example-repo/my-app-image
+oc import-image myimagestream --confirm --all --from registry/myorg/myimage
+
+oc import-image myimagestream[:tag]
+oc tag myimagestream:tag myimagestream:latest
+
+# from private registries
+podman login -u myuser registry.example.com
+oc create secret generic regtoken --from-file .dockerconfigjson=${XDG_RUNTIME_DIR}/containers/auth.json --type kubernetes.io/dockerconfigjson
+oc import-image myimagestream --confirm --from registry.example.com/myorg/myimage
+
+# Sharing an Image Stream Between Multiple Projects
+podman login -u myuser registry.example.com
+oc project shared
+oc create secret generic regtoken --from-file .dockerconfigjson=${XDG_RUNTIME_DIR}/containers/auth.json --type kubernetes.io/dockerconfigjson
+oc import-image myis --confirm --reference-policy local --from registry.example.com/myorg/myimage
+oc policy add-role-to-group system:image-puller system:serviceaccounts:myapp
+oc project myapp
+oc new-app -i shared/myis
+```
