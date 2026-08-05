@@ -225,6 +225,16 @@ The final image names have the following pattern:
 You can verify the results by inspecting the image registry where odo creates the images or by inspecting the Kubernetes sources that odo creates in the cluster.
 
 
+## skopeo
+
+Skopeo is a lightweight, daemonless CLI tool for working with container images directly in registries — without pulling them locally. It lets you inspect, copy, delete, sync, and verify images across Docker/OCI registries and local storage.
+
+```
+skopeo login -u developer -p developer registry.ocp4.example.com:8443
+
+skopeo inspect docker://registry.ocp4.example.com:8443/redhattraining/hello-world-nginx
+```
+
 ## Building container images for openshift
 
 - see https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html-single/images/index#creating-images
@@ -396,7 +406,7 @@ Red Hat recommends the explicit definition of volumes in Containerfiles, by usin
 
 By default, when OpenShift processes an image that contains a VOLUME instruction in its metadata, it attaches an ephemeral volume of type EmptyDir at that location. Pods of the same deployment never share EmptyDir volumes, and when OpenShift removes the pod, it also deletes the volume.
 
-## Authenticating OpenShift with Private Registries
+## Secrets - authenticating OpenShift with private registries
 
 - https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 (NOTE: we can use ```oc``` in place of ```kubectl```)
@@ -449,17 +459,7 @@ oc get event --sort-by='.lastTimestamp' <--- Successfully pulled image ...
 
 ### Creating Registry Credentials in OpenShift
 
-To allow OpenShift to use an external registry, store credentials for authentication on the registry in OpenShift and associate the credentials with your service account.
-
-create a generic secret, which contains the user key with the developer value. Objects in the example-ns project can refer to that secret
-
-```
-oc create secret generic example-secret \
-  --from-literal=user=developer \
-  --namespace=example-ns
-```
-
-Kubernetes provides the docker-registry secret type to store credentials for authentication with the container registry.
+To allow OpenShift to use an external registry, store credentials for authentication on the registry in OpenShift and associate the credentials with your service account. Kubernetes provides the ```docker-registry``` secret type to store credentials for authentication with the container registry.
 
 ```
 oc create secret docker-registry SECRET_NAME \
@@ -467,6 +467,14 @@ oc create secret docker-registry SECRET_NAME \
   --docker-username USER \
   --docker-password PASSWORD \
   --docker-email=EMAIL
+```
+
+create a generic secret, which contains the user key with the developer value. Objects in the example-ns project can refer to that secret
+
+```
+oc create secret generic example-secret \
+  --from-literal=user=developer \
+  --namespace=example-ns
 ```
 
 You can also create the secret from existing credentials. For example, if you logged in to the private registry with Podman, then you have existing credentials in the ```${XDG_RUNTIME_DIR}/containers/auth.json``` file. Because the auth.json file uses the same structure as the ```.dockerconfigjson``` file, you can create the secret by using the ```auth.json``` file.
@@ -478,6 +486,20 @@ oc create secret generic SECRET_NAME \
 ```
 
 You can also upload the ```auth.json``` file in the OpenShift console when creating the secret.
+
+### Linking Registry Credentials to Service Accounts
+
+Instead of manually assigning the credentials to pods, you can configure OpenShift to assign the credentials to pods automatically by using service accounts. A service account provides an identity for pods. Pods use the default service account unless you configure a different service account.
+
+Use the oc secrets link command to connect a secret with a service account, for example:
+
+```
+oc secrets link --for=pull default SECRET_NAME
+```
+
+When you create a pod that uses the ```default``` service account, it inherits the ```imagePullSecrets``` field without you explicitly specifying the field in the pod definition.
+
+This means that every pod that uses the ```default``` service account is authorized with the registry credentials in your secret.
 
 ### Configuring OpenShift to Use the Registry Credentials
 
@@ -518,32 +540,7 @@ spec:
         - name: SECRET_NAME
 ```
 
-### Linking Registry Credentials to Service Accounts
-
-Instead of manually assigning the credentials to pods, you can configure OpenShift to assign the credentials to pods automatically by using service accounts. A service account provides an identity for pods. Pods use the default service account unless you configure a different service account.
-
-Use the oc secrets link command to connect a secret with a service account, for example:
-
-```
-oc secrets link --for=pull default SECRET_NAME
-```
-
-The preceding command creates a new entry in the service account ```imagePullSecrets``` field:
-
-```
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: default
-imagePullSecrets:
-- name: SECRET_NAME
-```
-
-When you create a pod that uses the ```default``` service account, it inherits the ```imagePullSecrets``` field without you explicitly specifying the field in the pod definition.
-
-This means that every pod that uses the ```default``` service account is authorized with the registry credentials in your secret.
-
-## image stream
+## Image stream
 
 - a pointer to a container image ( is --> registry --> ci )
 - an Image Stream does __NOT__ contain the actual image data
@@ -555,11 +552,14 @@ This means that every pod that uses the ```default``` service account is authori
 ```
 oc describe is php -n openshift
 
-oc import-image myimagestream --confirm --scheduled=true --from example.com/example-repo/my-app-image
-oc import-image myimagestream --confirm --all --from registry/myorg/myimage
+oc import-image my-image-stream-name --confirm --scheduled=true --from example.com/example-repo/app-image
+
+oc import-image my-image-stream-name --confirm --all --from registry/someorg/someimage
 
 oc import-image myimagestream[:tag]
-oc tag myimagestream:tag myimagestream:latest
+oc tag image:tag myimagestream:latest
+
+oc -n project-name get istag
 
 # from private registries
 podman login -u myuser registry.example.com
@@ -574,4 +574,140 @@ oc import-image myis --confirm --reference-policy local --from registry.example.
 oc policy add-role-to-group system:image-puller system:serviceaccounts:myapp
 oc project myapp
 oc new-app -i shared/myis
+```
+
+### lab commands - images-review
+
+```
+OVERWRITE=true lab start images-review
+
+cd ~/D0288/labs/images-review/
+cat Containerfile
+
+podman login -u developer -p developer registry.ocp4.example.com:8443
+podman build -t registry.ocp4.example.com:8443/developer/custom-server:1.0.0 -f Containerfile
+podman push registry.ocp4.example.com:8443/developer/custom-server:1.0.0
+
+oc login -u developer -p developer https://api.ocp4.example.com:6443
+
+oc create secret docker-registry registry-credentials --docker-server=registry.ocp4.example.com:8443 --docker-username=developer --docker-password=developer --docker-email=developer@example.com
+
+oc secret link default registry-credentials --for=pull
+
+oc import-image custom-server --from=registry.ocp4.example.com:8443/developer/custom-server:1.0.0 --confirm
+
+oc new-app --name custom-server --image-stream=custom-server
+oc get pods
+
+oc expose service custom-server
+oc get routes
+curl custom-server-default.apps.ocp4.example.com
+```
+
+## build applications
+
+### guided exercise commands - builds-applications
+
+```
+oc login -u developer -p developer https://api.ocp4.example.com:6443
+oc project builds-applications
+
+cd ~/DO288/DO288-apps/apps/builds-applications/vertx-site
+./oc-new-app.sh
+
+# or
+
+oc new-app --name vertx-site \
+--build-env MAVEN_MIRROR_URL=http://nexus-infra.apps.ocp4.example.com/java \
+--env JAVA_APP_JAR=vertx-site-1.0.0-SNAPSHOT-fat.jar \
+-i redhat-openjdk18-openshift:1.8 \
+--context-dir apps/builds-applications/vertx-site \
+https://git.ocp4.example.com/developer/DO288-apps
+
+# build has an intentional error
+
+oc get build
+oc logs -f buildconfig/vertx-site
+
+# need to fix MAVEN_MIRROR_URL
+# either
+
+oc delete all --all
+# re-run oc new-app with correct MAVEN_MIRROR_URL
+
+# or
+
+oc set env bc/vertx-site MAVEN_MIRROR_URL=...
+oc start-build vertx-site
+oc wait --for=condition=complete --timeout=600s builds/vertex-site-2
+
+# then
+
+oc get pods
+oc expose service/vertx-site
+oc get routes
+curl http://...
+
+# modify and rebuild the application
+
+# change the text in MainVerticle.java
+
+git commit -am "..."
+git push
+
+oc start-build --follow vertx-site
+oc get pods
+curl ...
+```
+
+## triggering builds
+
+```
+oc describe bc/build-config-name
+
+# to see webhook secrets
+oc get -o json bc/build-config-name  | jq .spec.triggers[]
+
+# to see all --from-... options
+oc set triggers --help
+
+oc set triggers bc/name ...
+oc set triggers bc/name ... --remove
+```
+
+#### if you need to create a secret
+```
+dd if=/dev/urandom bs=1 count=128 2>/dev/null | md5sum
+
+oc create secret generic gitub-trigger-secret --from-literal WebHookSecretKey=<md5sum output>
+
+oc edit bc/name -o yaml
+...
+triggers:
+- type: GitHub
+  github:
+    secretReference:
+      name: github-trigger-secret
+...
+```
+
+### guided exercise - triggers builds
+
+```
+cd ~/DO288
+git clone https://git.ocp4.example.com/developer/build-triggers.git
+cd build-triggers
+echo "Hello world!" > index.html
+# add, commit, push
+
+oc create secret generic gitlab --from-literal=username=developer --from-literal=password=d3v3lop3r
+oc new-app --name builds-triggers --source-secret gitlab image-url~git-url
+
+# change the base image to ubi9 to trigger a new build
+oc rsh svc/builds-triggers cat /etc/redhat-release
+oc set triggers bc/builds-triggers
+oc tag registry.ocp4.example.com:8443/ubi9/httpd-24:latest httpd-24:latest
+oc describe is httpd-24
+oc get builds
+oc rsh ...
 ```
