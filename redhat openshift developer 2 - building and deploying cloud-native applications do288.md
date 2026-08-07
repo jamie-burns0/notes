@@ -711,3 +711,191 @@ oc describe is httpd-24
 oc get builds
 oc rsh ...
 ```
+
+### lab - builds review
+
+```
+# step 2
+
+cd ~/DO288/DO288-apps/apps/builds-review/expense-service
+cat Dockerfile
+
+# note 
+- in the provided solution they dont create or use secrets
+- but oc new-app with the secrets below worked for me
+
+oc create secret docker-registry registry-secret --docker-server=registry.ocp4.example.com:8443 --docker-username=developer --docker-password=developer
+oc secret link default registry-secret --for=pull
+
+oc create secret generic repository-secret --from-literal=username=developer --from-literal=password=d3v3lop3r
+
+oc new-app --name expense-service --strategy=docker https://git.ocp4.example.com/developer/DO288-apps --source-secret=repository-secret --context-dir=apps/builds-review/expense-service
+
+oc logs -f buildconfig/expense-service
+oc get pods
+--> STATUS shows CrashLoopBackOff
+
+# step 3
+
+oc logs deploy/expense-service
+
+# they build the app locally - i don't know how they knew the command to use
+mvn -Dmaven.compiler.release=11 clean package
+
+# they verified the state of the container file system
+oc debug deploy/expense-service
+ls target/
+ls
+--> they note that there is no src folder
+exit
+
+# they update the Dockerfile
+COPY src src
+
+# update the source repostiory
+git commit -am ...
+git push
+
+# step 4
+
+# i deleted and re-created the app
+
+oc delete all -l app=expense-service
+oc new-app ...
+
+# they just restarted the build
+
+oc start-build bc/expense-service --follow
+
+oc get pods
+
+# step 5
+
+oc expose svc expense-service
+oc get routes
+curl ...
+```
+
+## Deployment strategies
+
+### Deployment resource strategies
+
+- __rolling__ (canary deployment)
+  - If the canary is ok, replace all pods with the new release
+  - no downtime + application can support previous and new releases at the same time
+- __recreate__ 
+  - when all pods have stopped, start all pods with the new release
+  - has downtime, application does not need to support previous and new versions at the same time
+
+### Openshift router strategies
+
+- __blue-green__
+- __A/B_ (like A/B testing)
+  - some requests go to the new release
+  - gradually increase requests to the new release
+
+### guided exercise - deployment strategy
+
+```
+oc login ...
+cd ~/DO288/labs/deployments-strategy/users-db
+
+oc new-app --name users-db \
+-e MYSQL_USER=developer -e MYSQL_PASSWORD=redhat -e MYSQL_DATABASE=users \
+https://git.ocp4.example.com/developer/DO288-apps --context-dir=apps/deployments-strategy/users-db \
+-o yaml > application.yaml
+
+oc apply -f application.yaml
+oc get pods
+
+oc scale --replicas=5 deploy/users-db
+oc get pods
+
+oc get deploy/users-db -o yaml
+
+# because of the default rolling update strategy, 
+# pods will be termnated and recreated one at a time
+
+oc rollout restart deploy/users-db
+
+# edit application.yaml
+
+# change replicas: 1 to
+
+replicas: 5
+
+# replace strategy: {} with
+
+strategy:
+  type: Recreate
+  recreateParams:
+    post:
+      failurePolicy: Abort
+      execNewPod:
+        containerName: users-db
+        command: ["/post-deploy/import.sh"]
+
+oc apply -f application.yaml
+
+# because of the recreate strategy, 
+# allpods will be termnated and recreated at the same time
+
+oc rollout restart deploy/users-db
+```
+
+## manage deployments with the CLI
+
+```
+oc rollout status deploy/example-deployment
+oc rollout undo deploy/example-deployment
+oc rollout pause ...
+oc rollout resume ...
+
+oc scale --replicas=3 ...
+```
+
+### config maps
+
+- config maps and secrets commands are very similar - in most cases just change configmap to secret
+- for secrets we need to encode/deode as base64, ```echo -n 'hunter3' | base64``` or ```echo -n 'aHVudGVyMw==' | base64 --decode```
+
+```
+oc create configmap cm-name --from-literal key1=value1 --from-literal ...
+oc create configmap cm-name --from-file=myconfig.conf
+oc create configmap cm-name --from-file=key1=/path/to/myconfig.conf --from-file=key2=/path/to/other.conf
+
+oc get configmap cm-name -o yaml
+oc edit configmap cm-name
+
+oc extract configmap/cm-name --to=/tmp/configmap
+# edit, then
+oc set data configmap/cm-name --from-file=/tmp/configmap
+```
+
+### inject configmaps and secrets into pods
+
+```
+# inject into pod environment
+
+oc set env deploy/my-deployment --from configmap/cm-name
+
+# mount into pod environment
+
+oc set volume deployment/my-deployment --add -t secret -m /path/to/mount/volume --name myvol --secret-name my-secret
+```
+
+## service accounts
+
+```
+oc create serviceaccount my-sa
+
+oc set serviceaccount deploy/my-deployment my-sa
+```
+
+## security context
+
+```
+oc get pod -o yaml | grep scc
+
+oc get pod example-pod -o jsonpath='{.spec.containers[0].securityContext}' | jq
+```
