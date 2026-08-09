@@ -5,7 +5,7 @@ wsl --cd "~" -d kali-redhat-quarkus-wsl -e zsh
 ## launch project
 
 ```
-project_name=learn-quarkus-02
+project_name=learn-quarkus-03
 
 java_version=latest
 maven_version=latest
@@ -25,7 +25,7 @@ cd $project_home && code ../$project_name.code-workspace --profile "Quarkus"
 ## build project
 
 ```
-project_name=learn-quarkus-02
+project_name=learn-quarkus-03
 
 java_version=latest
 maven_version=latest
@@ -48,16 +48,16 @@ cd $project_home && QUARKUS_HTTP_PORT=8090 mvn quarkus:dev -Ddebug=5006
 
 ## new quarkus project
 
-- https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.27/html/getting_started_with_red_hat_build_of_quarkus/assembly_quarkus-getting-started#proc_quarkus-creating-proj
-- https://quarkus.io/version/3.27/guides/maven-tooling
-- https://quarkus.io/version/3.27/guides/quarkus-maven-plugin
+- https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.33/html/getting_started_with_red_hat_build_of_quarkus/assembly_quarkus-getting-started#proc_quarkus-creating-proj
+- https://quarkus.io/version/3.33/guides/maven-tooling
+- https://quarkus.io/version/3.33/guides/quarkus-maven-plugin
 
 - https://code.quarkus.redhat.com
 
 ```
-project_name=learn-quarkus-02
+project_name=learn-quarkus-03
 
-quarkus_platform_version=3.27.0.redhat-00002
+quarkus_platform_version=3.33.2.SP3-redhat-00003
 
 java_version=latest
 maven_version=latest
