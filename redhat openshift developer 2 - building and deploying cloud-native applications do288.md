@@ -7,6 +7,19 @@ ssh lab@utility
 ./wait.sh
 ```
 
+## getting help
+
+```
+oc api-resources | less
+--> list includes the deployments api (short name = deploy)
+
+# to get help on fields in a resource that we see
+# in a yaml file. We can use long or short name
+
+oc explain deployments --recursive | less
+oc explain deploy.spec.strategy --recursive | less
+```
+
 ![high-level functional overview](./redhat-openshift-developer-2-building-and-deploying-cloud-native-applications-do288/redhat-openshift-high-level-functional-overview.png)
 
 ![architecture of red hat openshift](./redhat-openshift-developer-2-building-and-deploying-cloud-native-applications-do288/architecture-of-red-hat-openshift.png)
@@ -411,6 +424,12 @@ By default, when OpenShift processes an image that contains a VOLUME instruction
 - https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 (NOTE: we can use ```oc``` in place of ```kubectl```)
 - https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+
+```
+oc get secrets
+oc get secret secret-name -o yaml
+echo -n 'encoded secret' | base64 --decode
+```
 
 ### guided exercise
 
@@ -852,6 +871,30 @@ oc rollout pause ...
 oc rollout resume ...
 
 oc scale --replicas=3 ...
+```
+
+### guided exercise - deployments-applications
+```
+oc describe secret postgresql
+oc secret postgresql -o yaml
+echo -n '...' | base64 --decode
+
+oc import-image expense-service --from=registry.../ocpdev-expense-service:4:18 --confirm
+oc new-app --name=expense-service --image-stream=expense-service
+
+oc logs deployments/expense-service -f
+--> has an exception
+oc get pods
+--> eventually CrashLoopBackoff
+
+# database username in application.properties doesn't
+# match the database username in secret/postgresql
+
+# instead of fixing it in application.properties
+# or changing it in secret/postgresql
+# we override using an environment variable
+
+oc set env deploy/expense-service --from=secret/postgres
 ```
 
 ### config maps
