@@ -927,6 +927,36 @@ oc set env deploy/my-deployment --from configmap/cm-name
 oc set volume deployment/my-deployment --add -t secret -m /path/to/mount/volume --name myvol --secret-name my-secret
 ```
 
+### lab - deployments-review
+
+```
+# use web console to create pvc and volume mount
+Topology > postgresql > add storage > create new claim
+
+oc new-app --name=expense-service --image=registry...
+oc expose service expense-service
+
+oc logs deploy/expense-service
+--> reports an error
+# can also use the web console to see events
+
+oc set env deploy/expense-service --from=secret/postgresql
+oc set env deploy/expense-service QUARKUS_DATASOURCE_JDBC_URL=...
+
+oc describe deploy/expenses
+
+KUBE_EDITOR="gedit" oc edit deploy/expense-service
+- rename DATABASE_USER --> QUARKUS_DATASOURCE_USERNAME
+- rename DATABASE_PASSWORD --> ...
+- update QUARKUS_DATASOURCE_JDBC_URL=jdbc://.../$(DATABASE_NAME)
+
+oc logs deploy/expense-service
+--> clean log
+
+# use web console to create health checks
+Topology > expenses-service > add health checks
+```
+
 ## service accounts
 
 ```
