@@ -875,6 +875,8 @@ oc scale --replicas=3 ...
 
 ### guided exercise - deployments-applications
 ```
+oc extract secret/postgresql --to=-
+# or
 oc describe secret postgresql
 oc secret postgresql -o yaml
 echo -n '...' | base64 --decode
@@ -971,4 +973,41 @@ oc set serviceaccount deploy/my-deployment my-sa
 oc get pod -o yaml | grep scc
 
 oc get pod example-pod -o jsonpath='{.spec.containers[0].securityContext}' | jq
+```
+
+## pipelines
+
+### lab - pipelines-review
+
+- as an alternative, logs and status can be found through the web console
+
+```
+# list tasks in the openshift-pipeline namespace
+oc get tasks -n openshift-pipelines
+
+# get documentation for a task
+oc get tasks/git-clone -n openshift-pipelines -o yaml
+oc describe tasks/git-clone -n openshift-pipelines
+
+# we can create|apply|delete
+oc create -f task.yaml
+oc create -f pipeline.yaml
+oc create -f run.yaml
+
+tkn pipeline logs -f -a pipeline-name
+tkn pipeline list
+
+# pipeline.yaml
+...
+  tasks:
+  - name: fetch-repository
+    taskRef:
+      resolver: cluster
+      params:
+      - name: kind
+        value: task
+      - name: name
+        value: git-clone
+      - name: namespace
+        value: openshift-pipelines
 ```
