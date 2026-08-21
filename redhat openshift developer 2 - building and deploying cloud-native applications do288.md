@@ -980,6 +980,7 @@ oc get pod example-pod -o jsonpath='{.spec.containers[0].securityContext}' | jq
 ### lab - pipelines-review
 
 - as an alternative, logs and status can be found through the web console
+- for tekton documentation, see tekton.dev
 
 ```
 # list tasks in the openshift-pipeline namespace
@@ -1001,6 +1002,7 @@ tkn pipeline list
 ...
   tasks:
   - name: fetch-repository
+    # see tekton.dev > Documentation > Tasks and Pipelines > Cluster Resolver
     taskRef:
       resolver: cluster
       params:
