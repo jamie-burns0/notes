@@ -975,6 +975,93 @@ oc get pod -o yaml | grep scc
 oc get pod example-pod -o jsonpath='{.spec.containers[0].securityContext}' | jq
 ```
 
+## Multi-container applications - Helm, Kustomize, Templates
+
+### templates
+
+- There were no guided exercise or lab for templates
+- They are only an openshift thing
+- see https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html-single/building_applications/index#using-templates
+
+```
+oc get templates -n openshift | grep mariadb
+oc describe template/mariadb-ephemeral -n openshift
+
+oc new-app --file my-template.yaml -p PARAM1=value1 -p PARAM2=...
+oc new-app --template mariadb-ephemeral -p MYSQL_USER=todouser -p ...
+```
+
+### helm
+
+- The kubernetes package manager
+- https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html-single/building_applications/index#working-with-helm-charts
+- https://helm.sh/
+
+```
+helm repo add repo-name https://charts.openshift.io/
+helm repo list
+
+helm search repo repo-name | less
+
+# to inspect the chart before deploying
+helm pull repo-name/redhat-nodejs --untar --destination chart-name
+```
+
+#### create a chart
+
+- see https://helm.sh/docs/topics/charts
+- ``` helm create --help```
+
+
+#### for dependencies declared in Chart.yaml
+
+- see https://helm.sh/docs/helm/helm_dependency
+
+```
+helm dependency --help
+
+Chart.yaml
+...
+
+```
+
+
+
+#### for imagePullPolicy values
+- see https://kubernetes.io/docs/concepts/containers/images/
+
+```
+values.yaml
+...
+expenseService:
+  replicaCount: 1
+  image: "registry.ocp4.example.com:8443/redhattraining/ocpdev-expense-service:4.18"
+
+postgres:
+  pass: ""
+...
+
+expense-deploy.yaml
+...
+{{- with .Values.expenseService }}
+image: {{ .image | quote }}  --> image: "registry.ocp4..."
+...
+{{- end }}
+
+helm template -s expense-deploy.yaml .
+
+postgres-secret.yaml
+...
+{{- if .Values.postgres.pass }}
+database-password: {{ .Values.postgres.pass | b64enc }}
+{{- else}}
+database-password: {{ randAlphaNum 20 | b64enc }}
+{{- end}}
+
+helm install --wait expense-service .
+...
+```
+
 ## pipelines
 
 ### lab - pipelines-review
