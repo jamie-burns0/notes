@@ -45,6 +45,62 @@ cd $project_home && QUARKUS_HTTP_PORT=8080 mvn quarkus:dev -Ddebug=5005
 cd $project_home && QUARKUS_HTTP_PORT=8090 mvn quarkus:dev -Ddebug=5006
 ```
 
+## Openshift
+
+- https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.33/html/deploy_applications_to_openshift_container_platform/index
+- https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.33/html/deploy_applications_to_openshift_container_platform/deploying-to-openshift-s2i-howto
+
+### install the openshift cli on kali linux
+
+```
+wget https://downloads-openshift-console.apps.rm2.thpm.p1.openshiftapps.com/amd64/linux/oc.tar
+tar -xvf oc.tar
+sudo mv oc /usr/local/bin
+oc help
+```
+
+### build - docker strategy
+
+```
+```
+
+### build - s2i strategy
+
+```
+Powershell
+
+ssh-keygen -t ed25519 -C "openshift-s2i" -f ./openshift-s2i
+
+GitHub
+
+- https://github.com/jamie-burns0/learn-quarkus-03 > Settings > Deploy keys
+- add contents of ./openshift-s2i.pub
+
+Openshift
+
+oc create secret generic github-ssh --from-file=ssh-privatekey=./openshift-s2i --type=kubernetes.io/ssh-auth
+
+oc secret link builder github-ssh
+
+oc import-image ubi9/openjdk-21 --from=registry.access.redhat.com/ubi9/openjdk-21 --confirm
+
+oc new-app --name=learn-quarkus-03 registry.access.redhat.com/ubi9/openjdk-21~git@github.com:jamie-burns0/learn-quarkus-03.git --source-secret=github-ssh --dry-run
+
+oc logs -f bc/learn-quarkus-03
+oc logs -f deploy/learn-quarkus-03
+
+oc expose svc/learn-quarkus-03
+
+oc rsh pod/learn-quarkus-03-...
+
+curl localhost:8080/fd/sorted
+
+exit
+
+oc get routes
+
+curl learn-quarkus-03-jamie-burns-dev.../fd/sorted
+```
 
 ## new quarkus project
 
