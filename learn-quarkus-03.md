@@ -61,7 +61,20 @@ oc help
 
 ### build - docker strategy
 
+- https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/builds_using_buildconfig/build-strategies
+
 ```
+oc new-app --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build && oc logs -f bc/learn-quarkus-03-docker
+
+oc delete is/learn-quarkus-03-docker && oc delete bc/learn-quarkus-03-docker && oc delete all -l app=learn-quarkus-03-docker
+
+oc new-app --name=learn-quarkus-03-docker --strategy=docker git@github.com:jamie-burns0/learn-quarkus-03.git#openshift-docker-build --source-secret=github-ssh --dry-run
+
+oc new-app --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build --source-secret=github-ssh --dry-run
+
+oc new-build --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build --dry-run
+
+oc start-build learn-quarkus-03-docker --follow
 ```
 
 ### build - s2i strategy
