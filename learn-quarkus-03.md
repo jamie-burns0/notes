@@ -59,7 +59,25 @@ sudo mv oc /usr/local/bin
 oc help
 ```
 
-### build - docker strategy
+### podman build
+
+```
+# build for JVM runtime
+
+podman build -t learn-quarkus-03-docker -f Dockerfile
+podman run --rm --name learn-quarkus-03-docker -p 8081:8080 learn-quarkus-03-docker:latest
+
+# build for native
+
+redhat_username=jamie-burns0
+redhat_password="..."
+podman login -u $redhat_username -p $redhat_password quay.io
+
+podman build -t learn-quarkus-03-docker-native -f Dockerfile-with-support-for-native-build
+
+```
+
+### openshift build - docker strategy
 
 - https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/builds_using_buildconfig/build-strategies
 
