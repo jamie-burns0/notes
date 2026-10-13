@@ -59,22 +59,43 @@ sudo mv oc /usr/local/bin
 oc help
 ```
 
-### podman build
+### podman build - build for JVM runtime
 
 ```
-# build for JVM runtime
-
 podman build -t learn-quarkus-03-docker -f Dockerfile
 podman run --rm --name learn-quarkus-03-docker -p 8081:8080 learn-quarkus-03-docker:latest
+```
 
-# build for native
+### podman build - build for native
 
-redhat_username=jamie-burns0
-redhat_password="..."
-podman login -u $redhat_username -p $redhat_password quay.io
+- https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.33/html/compile_applications_to_native_executables/assembly_quarkus-building-native-executable
+
+The red hat openshift developer sandbox does not appear to support build for native. So we are going to build on our local podman and push to the sandbox image repository
+
+```
+git status
+git switch openshift-docker-native-build
+
+# redhat_username=jamie-burns0
+# redhat_password="..."
+# podman login -u $redhat_username -p $redhat_password quay.io
+# podman login -u $redhat_username -p $redhat_password registry.redhat.io
+# podman login -u $redhat_username -p $redhat_password registry.access.redhat.com
 
 podman build -t learn-quarkus-03-docker-native -f Dockerfile-with-support-for-native-build
+podman run --rm -it --name abc localhost/learn-quarkus-03-docker-native:latest
 
+podman exec -it abc /bin/bash
+curl -s localhost:8080/fd/sorted
+
+# get oc login command from web console
+oc login ...
+
+oc registry login
+
+podman push localhost/learn-quarkus-03-docker-native:latest docker://default-route-openshift-image-registry.apps.rm2.thpm.p1.openshiftapps.com/jamie-burns0-dev/learn-quarkus-03-docker-native:latest
+
+oc new-app ... <-- wednesday's job
 ```
 
 ### openshift build - docker strategy
