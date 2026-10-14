@@ -95,7 +95,18 @@ oc registry login
 
 podman push localhost/learn-quarkus-03-docker-native:latest docker://default-route-openshift-image-registry.apps.rm2.thpm.p1.openshiftapps.com/jamie-burns0-dev/learn-quarkus-03-docker-native:latest
 
-oc new-app ... <-- wednesday's job
+oc new-app --name=learn-quarkus-03-docker-native learn-quarkus-03-docker-native
+oc expose svc/learn-quarkus-03-docker-native
+oc create route edge learn-quarkus-03-docker-native-secure --service=learn-quarkus-03-docker-native
+
+oc get routes
+--> will return two routes - one insecure (http), one secure (https)
+
+http://learn-quarkus-03-docker-native-jamie-burns0-dev.../fd/sorted
+https://learn-quarkus-03-docker-native-secure-jamie-burns0-dev.../fd/sorted
+
+oc delete all -l app=learn-quarkus-03-docker-native
+oc delete is/learn-quarkus-03-docker-native
 ```
 
 ### openshift build - docker strategy
@@ -104,6 +115,17 @@ oc new-app ... <-- wednesday's job
 
 ```
 oc new-app --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build && oc logs -f bc/learn-quarkus-03-docker
+
+oc rsh deploy/learn-quarkus-03-docker
+curl localhost:8080/fd/sorted
+exit
+
+oc expose svc/learn-quarkus-03-docker
+curl learn-quarkus-03-docker-jamie-burns0-dev.../fd/sorted
+http://learn-quarkus-03-docker-jamie-burns0-dev.../fd/sorted
+
+oc create route edge learn-quarkus-03-docker-secure --service=learn-quarkus-03-docker
+https://learn-quarkus-03-docker-secure-jamie-burns0-dev.../fd/sorted
 
 oc delete is/learn-quarkus-03-docker && oc delete bc/learn-quarkus-03-docker && oc delete all -l app=learn-quarkus-03-docker
 
@@ -135,6 +157,10 @@ oc create secret generic github-ssh --from-file=ssh-privatekey=./openshift-s2i -
 oc secret link builder github-ssh
 
 oc import-image ubi9/openjdk-21 --from=registry.access.redhat.com/ubi9/openjdk-21 --confirm
+
+<-- Thursday
+- run this again to check it still works
+- fix openshift-s2i-build branch so that it is not behind main
 
 oc new-app --name=learn-quarkus-03 registry.access.redhat.com/ubi9/openjdk-21~git@github.com:jamie-burns0/learn-quarkus-03.git --source-secret=github-ssh --dry-run
 
