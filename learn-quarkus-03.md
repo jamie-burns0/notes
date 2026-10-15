@@ -127,7 +127,7 @@ http://learn-quarkus-03-docker-jamie-burns0-dev.../fd/sorted
 oc create route edge learn-quarkus-03-docker-secure --service=learn-quarkus-03-docker
 https://learn-quarkus-03-docker-secure-jamie-burns0-dev.../fd/sorted
 
-oc delete is/learn-quarkus-03-docker && oc delete bc/learn-quarkus-03-docker && oc delete all -l app=learn-quarkus-03-docker
+oc delete bc/learn-quarkus-03-docker && oc delete is/learn-quarkus-03-docker && oc delete all -l app=learn-quarkus-03-docker
 
 oc new-app --name=learn-quarkus-03-docker --strategy=docker git@github.com:jamie-burns0/learn-quarkus-03.git#openshift-docker-build --source-secret=github-ssh --dry-run
 
@@ -158,26 +158,23 @@ oc secret link builder github-ssh
 
 oc import-image ubi9/openjdk-21 --from=registry.access.redhat.com/ubi9/openjdk-21 --confirm
 
-<-- Thursday
-- run this again to check it still works
-- fix openshift-s2i-build branch so that it is not behind main
-
-oc new-app --name=learn-quarkus-03 registry.access.redhat.com/ubi9/openjdk-21~git@github.com:jamie-burns0/learn-quarkus-03.git --source-secret=github-ssh --dry-run
+oc new-app --name=learn-quarkus-03 registry.access.redhat.com/ubi9/openjdk-21~git@github.com:jamie-burns0/learn-quarkus-03.git#openshift-s2i-build --source-secret=github-ssh
 
 oc logs -f bc/learn-quarkus-03
 oc logs -f deploy/learn-quarkus-03
 
-oc expose svc/learn-quarkus-03
-
-oc rsh pod/learn-quarkus-03-...
-
+oc rsh deploy/learn-quarkus-03
 curl localhost:8080/fd/sorted
-
 exit
 
-oc get routes
+oc expose svc/learn-quarkus-03
+curl learn-quarkus-03-jamie-burns0-dev.../fd/sorted
+http://learn-quarkus-03-jamie-burns0-dev.../fd/sorted
 
-curl learn-quarkus-03-jamie-burns-dev.../fd/sorted
+oc create route edge learn-quarkus-03-secure --service=learn-quarkus-03
+https://learn-quarkus-03-secure-jamie-burns0-dev.../fd/sorted
+
+oc delete bc/learn-quarkus-03 && oc delete is/learn-quarkus-03 && oc delete all -l app=learn-quarkus-03
 ```
 
 ## new quarkus project
