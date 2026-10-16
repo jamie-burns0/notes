@@ -73,6 +73,13 @@ podman run --rm --name learn-quarkus-03-docker -p 8081:8080 learn-quarkus-03-doc
 The red hat openshift developer sandbox does not appear to support build for native. So we are going to build on our local podman and push to the sandbox image repository
 
 ```
+<-- Monday
+- fix this to align with single branch strategy
+- create pipelines for each strategy
+  - s2i
+  - docker jvm
+  - docker native
+
 git status
 git switch openshift-docker-native-build
 
