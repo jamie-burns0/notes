@@ -114,7 +114,26 @@ oc delete is/learn-quarkus-03-docker-native
 - https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/builds_using_buildconfig/build-strategies
 
 ```
-oc new-app --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build && oc logs -f bc/learn-quarkus-03-docker
+oc delete all -l app=learn-quarkus-03-docker-jvm && \
+oc delete all -l buildconfig=learn-quarkus-03-docker-jvm && \
+oc delete bc/learn-quarkus-03-docker-jvm && \
+oc delete is/learn-quarkus-03-docker-jvm
+
+oc create is learn-quarkus-03
+
+# because our dockerfile is not called Dockerfile and does not live in the project root, we need to create our buildconfig this way
+
+oc apply -f - <<'EOF'
+(paste contents of our openshift/Dockerfile.jvm here)
+EOF
+
+# if our buildconfig already exists, start a new build
+oc start-build learn-quarkus-03-docker-jvm
+
+# otherwise
+oc logs -f bc/learn-quarkus-03-docker-jvm
+
+oc new-app --name=learn-quarkus-03-docker-jvm --image-stream=learn-quarkus-03:docker-jvm
 
 oc rsh deploy/learn-quarkus-03-docker
 curl localhost:8080/fd/sorted
@@ -127,7 +146,6 @@ http://learn-quarkus-03-docker-jamie-burns0-dev.../fd/sorted
 oc create route edge learn-quarkus-03-docker-secure --service=learn-quarkus-03-docker
 https://learn-quarkus-03-docker-secure-jamie-burns0-dev.../fd/sorted
 
-oc delete bc/learn-quarkus-03-docker && oc delete is/learn-quarkus-03-docker && oc delete all -l app=learn-quarkus-03-docker
 
 oc new-app --name=learn-quarkus-03-docker --strategy=docker git@github.com:jamie-burns0/learn-quarkus-03.git#openshift-docker-build --source-secret=github-ssh --dry-run
 
@@ -136,6 +154,24 @@ oc new-app --name=learn-quarkus-03-docker --strategy=docker https://github.com/j
 oc new-build --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build --dry-run
 
 oc start-build learn-quarkus-03-docker --follow
+
+
+Wsl
+
+# our output imagestream needs to exist before we run oc start-build
+
+# if our yaml doesn't have an ImageStream definition, we can create our imagestream from the cli
+oc create is learn-quarkus-03
+
+# otherwise
+oc apply -f openshift/buildconfig-docker-jvm.yaml
+
+oc start-build learn-quarkus-03-docker-jvm
+
+oc logs -f bc/learn-quarkus-03-docker-jvm
+
+oc new-app --name=learn-quarkus-03-docker-jvm --image-stream=learn-quarkus-03:docker-jvm
+oc logs -f deploy/learn-quarkus-03-docker-jvm
 ```
 
 ### build - s2i strategy
@@ -145,10 +181,12 @@ Powershell
 
 ssh-keygen -t ed25519 -C "openshift-s2i" -f ./openshift-s2i
 
+
 GitHub
 
 - https://github.com/jamie-burns0/learn-quarkus-03 > Settings > Deploy keys
 - add contents of ./openshift-s2i.pub
+
 
 Openshift
 
@@ -158,7 +196,7 @@ oc secret link builder github-ssh
 
 oc import-image ubi9/openjdk-21 --from=registry.access.redhat.com/ubi9/openjdk-21 --confirm
 
-oc new-app --name=learn-quarkus-03 registry.access.redhat.com/ubi9/openjdk-21~git@github.com:jamie-burns0/learn-quarkus-03.git#openshift-s2i-build --source-secret=github-ssh
+oc new-app --name=learn-quarkus-03 registry.access.redhat.com/ubi9/openjdk-21~git@github.com:jamie-burns0/learn-quarkus-03.git --source-secret=github-ssh
 
 oc logs -f bc/learn-quarkus-03
 oc logs -f deploy/learn-quarkus-03
@@ -174,8 +212,34 @@ http://learn-quarkus-03-jamie-burns0-dev.../fd/sorted
 oc create route edge learn-quarkus-03-secure --service=learn-quarkus-03
 https://learn-quarkus-03-secure-jamie-burns0-dev.../fd/sorted
 
-oc delete bc/learn-quarkus-03 && oc delete is/learn-quarkus-03 && oc delete all -l app=learn-quarkus-03
+oc delete all -l app=learn-quarkus-03 && \
+oc delete bc/learn-quarkus-03 && \
+oc delete is/learn-quarkus-03
+
+
+Wsl
+
+# our output imagestream needs to exist before we run oc start-build
+
+# if our yaml doesn't have an ImageStream definition, we can create our imagestream from the cli
+oc create is learn-quarkus-03
+
+# otherwise
+oc apply -f openshift/buildconfig-s2i.yaml
+
+oc start-build learn-quarkus-03
+oc logs -f bc/learn-quarkus-03
+
+oc new-app --name=learn-quarkus-03 --image-stream=learn-quarkus-03:s2i
+oc logs -f deploy/learn-quarkus-03
 ```
+
+### pipeline (tekton) build
+
+<-- Friday's job
+- build for jvm runtime in a pipeline
+- can we simplify the code so that we only have one branch
+
 
 ## new quarkus project
 
