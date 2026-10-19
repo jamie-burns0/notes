@@ -89,15 +89,15 @@ git switch openshift-docker-native-build
 # podman login -u $redhat_username -p $redhat_password registry.redhat.io
 # podman login -u $redhat_username -p $redhat_password registry.access.redhat.com
 
-podman build -t learn-quarkus-03-docker-native -f Dockerfile-with-support-for-native-build
+podman build -t learn-quarkus-03-docker-native -f openshift/Dockerfile.native .
 podman run --rm -it --name abc localhost/learn-quarkus-03-docker-native:latest
 
 podman exec -it abc /bin/bash
 curl -s localhost:8080/fd/sorted
 
 # get oc login command from web console
-oc login ...
 
+oc login ...
 oc registry login
 
 podman push localhost/learn-quarkus-03-docker-native:latest docker://default-route-openshift-image-registry.apps.rm2.thpm.p1.openshiftapps.com/jamie-burns0-dev/learn-quarkus-03-docker-native:latest
