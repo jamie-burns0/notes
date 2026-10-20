@@ -73,13 +73,6 @@ podman run --rm --name learn-quarkus-03-docker -p 8081:8080 learn-quarkus-03-doc
 The red hat openshift developer sandbox does not appear to support build for native. So we are going to build on our local podman and push to the sandbox image repository
 
 ```
-<-- Monday
-- fix this to align with single branch strategy
-- create pipelines for each strategy
-  - s2i
-  - docker jvm
-  - docker native
-
 git status
 git switch openshift-docker-native-build
 
@@ -243,10 +236,28 @@ oc logs -f deploy/learn-quarkus-03
 
 ### pipeline (tekton) build
 
-<-- Friday's job
-- build for jvm runtime in a pipeline
-- can we simplify the code so that we only have one branch
+```
+wget https://tkn-cli-serve-openshift-pipelines.apps.rm2.thpm.p1.openshiftapps.com/tkn/tkn-linux-amd64.tar.gz
+tar -xzvf tkn-linux-amd64.tar.gz
+sudo mv tkn tkn-pac opc /usr/local/bin
+rm tkn-linux-amd64.tar.gz
+tkn --help
+```
 
+### pipeline build - docker strategy
+
+```
+# create pipeline
+oc apply -f openshift/learn-quarkus-03-docker-jvm-pipeline.yaml
+
+# if the PVC exists
+tkn p start learn-quarkus-03-docker-jvm -w name=workspace,claimName=learn-quarkus-03-docker-jvm-pipeline-pvc --use-param-defaults
+
+# otherwise
+tkn p start learn-quarkus-03-docker-jvm -w name=workspace,volumeClaimTemplateFile=openshift/learn-quarkus-03-docker-jvm-pipeline-pvc-workspace-template.yaml --use-param-defaults
+
+tkn p logs learn-quarkus-03-docker-jvm -f -L
+```
 
 ## new quarkus project
 
