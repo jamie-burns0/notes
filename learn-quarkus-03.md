@@ -62,7 +62,7 @@ oc help
 ### podman build - build for JVM runtime
 
 ```
-podman build -t learn-quarkus-03-docker -f Dockerfile
+podman build -t learn-quarkus-03-docker -f openshift/Dockerfile.jvm .
 podman run --rm --name learn-quarkus-03-docker -p 8081:8080 learn-quarkus-03-docker:latest
 ```
 
@@ -247,6 +247,9 @@ tkn --help
 ### pipeline build - docker strategy
 
 ```
+# create pvc
+oc apply -f openshift/learn-quarkus-03-docker-jvm-pipeline-pvc.yaml
+
 # create pipeline
 oc apply -f openshift/learn-quarkus-03-docker-jvm-pipeline.yaml
 
@@ -258,6 +261,50 @@ tkn p start learn-quarkus-03-docker-jvm -w name=workspace,volumeClaimTemplateFil
 
 tkn p logs learn-quarkus-03-docker-jvm -f -L
 ```
+
+### trigger - docker strategy
+
+- https://tekton.dev/docs/triggers/
+- https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.24/html/creating_cicd_pipelines/creating-applications-with-cicd-pipelines#adding-triggers_creating-applications-with-cicd-pipelines
+
+```
+SECRET=$(openssl rand -hex 20)
+oc create secret generic github-webhook-secret --from-literal=secretToken="$SECRET"
+echo "$SECRET"   # paste this into the GitHub webhook "Secret" field
+
+oc apply -f openshift/learn-quarkus-03-docker-jvm-trigger.yaml
+
+oc create route edge el-learn-quarkus-03-docker-jvm-secure --service=el-learn-quarkus-03-docker-jvm
+
+echo "URL: $(oc get route el-learn-quarkus-03-docker-jvm-secure --template='https://{{.spec.host}}')"
+
+# GitHub
+- https://docs.github.com/en/webhooks/using-webhooks/creating-webhooks
+
+repository > Settings > Webhooks > Add webhook
+Payload URL: URL
+Content type: application/json
+Secret: SECRET
+
+# Linux
+
+watch oc get pipelineruns,po
+
+# WSL
+
+git commit -m "empty-commit" --allow-empty && git push
+
+oc log po/learn-quarkus-03-docker-jvm-run-...-pod -f
+tkn p log -n jamie-burns0-dev -t -1
+```
+<-- Friday
+- push an empty commit and see if the build happens
+  - the sandox will top the el pod overnight
+  - how do we bring the capability back up
+- add health checks
+- would a pipeline work for s2i strategy?
+- how do we use Helm and Kustomize in our command line build
+- would we use Helm and Kustomize in our pipeline build
 
 ## new quarkus project
 
