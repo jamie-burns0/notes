@@ -45,6 +45,12 @@ cd $project_home && QUARKUS_HTTP_PORT=8080 mvn quarkus:dev -Ddebug=5005
 cd $project_home && QUARKUS_HTTP_PORT=8090 mvn quarkus:dev -Ddebug=5006
 ```
 
+## Clean up copilot refs
+
+```
+git for-each-ref --format='delete %(refname)' refs/agents | git update-ref --stdin
+```
+
 ## Openshift
 
 - https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.33/html/deploy_applications_to_openshift_container_platform/index
@@ -234,9 +240,59 @@ oc new-app --name=learn-quarkus-03 --image-stream=learn-quarkus-03:s2i
 oc logs -f deploy/learn-quarkus-03
 ```
 
+### helm
+
+- https://developers.redhat.com/learn/openshift/deploy-red-hat-openshift-using-helm-charts
+- https://helm.sh/docs/
+- https://helm.sh/docs/intro/install/
+
+```
+# WSL
+
+HELM_VERSION=4.3.1
+wget https://get.helm.sh/helm-v$HELM_VERSION-linux-amd64.tar.gz
+tar -zxvf helm-v$HELM_VERSION-linux-amd64.tar.gz
+sudo mv linux-amd64/helm /usr/local/bin/helm
+rm helm-v$HELM_VERSION-linux-amd64.tar.gz
+helm version
+```
+
+<-- Monday
+- on says it supports both jvm and native
+- can we get it working from the cli
+- can we use it in our pipeline or in a new pipeline
+- then kustomize
+- then templates
+
+```
+oc get helmchartrepositories -o yaml
+helm repo add openshift-helm-charts https://charts.openshift.io
+helm search repo openshift-helm-charts | less
+
+helm pull openshift-helm-charts/redhat-quarkus --untar --destination redhat-quarkus
+cd redhat-quarkus/quarkus/
+cat README.md | less
+
+vim values.yaml
+... update with our values - see pipeline and Dockerfile.native or Dockerfile.jvm
+
+helm install learn-quarkus-03-docker-native-helm .
+oc logs bc/learn-quarkus-03-docker-native-helm --follow
+
+oc logs deployments/learn-quarkus-03-docker-native-helm 
+oc get po learn-quarkus-03-docker-native-helm-594574bcd6-nm79f -o yaml
+
+clear
+helm get all learn-quarkus-03-docker-native-helm
+
+helm delete learn-quarkus-03-docker-native-helm
+```
+
 ### pipeline (tekton) build
 
 ```
+# WSL
+
 wget https://tkn-cli-serve-openshift-pipelines.apps.rm2.thpm.p1.openshiftapps.com/tkn/tkn-linux-amd64.tar.gz
 tar -xzvf tkn-linux-amd64.tar.gz
 sudo mv tkn tkn-pac opc /usr/local/bin
@@ -295,16 +351,8 @@ watch oc get pipelineruns,po
 git commit -m "empty-commit" --allow-empty && git push
 
 oc log po/learn-quarkus-03-docker-jvm-run-...-pod -f
-tkn p log -n jamie-burns0-dev -t -1
+tkn p log -n jamie-burns0-dev -f -L
 ```
-<-- Friday
-- push an empty commit and see if the build happens
-  - the sandox will top the el pod overnight
-  - how do we bring the capability back up
-- add health checks
-- would a pipeline work for s2i strategy?
-- how do we use Helm and Kustomize in our command line build
-- would we use Helm and Kustomize in our pipeline build
 
 ## new quarkus project
 
