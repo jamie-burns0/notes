@@ -265,6 +265,8 @@ helm version
 - then templates
 
 ```
+# WSL
+
 oc get helmchartrepositories -o yaml
 helm repo add openshift-helm-charts https://charts.openshift.io
 helm search repo openshift-helm-charts | less
@@ -273,8 +275,49 @@ helm pull openshift-helm-charts/redhat-quarkus --untar --destination redhat-quar
 cd redhat-quarkus/quarkus/
 cat README.md | less
 
+# option 1
+
+- use helm to deploy a previously built image
+- set build.enabled=false
+- for image.name, we can get our image name from the latest
+  TaskRun:deploy or "oc get is learn-quarkus-03-docker-jvm -o yaml"
+- since we are deploying and not building i deleted all the build 
+  related values
+- add startupProbe to values.yaml and update templates/deployment.yaml
+  to include the startup probe - copy how it adds livenessProbe
+
+  startupProbe:
+    httpGet:
+      path: /q/health/started
+      port: 8080
+      scheme: HTTP
+    initialDelaySeconds: 2
+    timeoutSeconds: 1
+    periodSeconds: 1
+    successThreshold: 1
+    failureThreshold: 900
+
+  livenessProbe:
+    httpGet:
+      path: /q/health/live
+      port: 8080
+      scheme: HTTP
+    initialDelaySeconds: 0
+    timeoutSeconds: 1
+    periodSeconds: 30
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    ...
+
 vim values.yaml
-... update with our values - see pipeline and Dockerfile.native or Dockerfile.jvm
+... update with our values - see above
+
+helm install learn-quarkus-03-docker-jvm-helm .
+oc get all | grep helm
+helm uninstall learn-quarkus-03-docker-jvm-helm
+
 
 helm install learn-quarkus-03-docker-native-helm .
 oc logs bc/learn-quarkus-03-docker-native-helm --follow

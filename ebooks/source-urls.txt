@@ -1,0 +1,14 @@
+Red Hat developer e-books
+- https://developers.redhat.com/e-books
+
+Enterprise Java Design Patterns in the Cloud Native Era
+- https://developers.redhat.com/e-books/enterprise-java-design-patterns-cloud-native-era
+
+The Grumpy Developer's Guide to OpenShift
+- https://developers.redhat.com/e-books/grumpy-developers-guide-to-openshift
+
+The Path to GitOps
+- https://developers.redhat.com/e-books/path-gitops
+
+Quarkus for Spring Developers
+- https://developers.redhat.com/e-books/quarkus-spring-developers

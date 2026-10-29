@@ -1,0 +1,806 @@
+```
+wsl --cd "~" -d kali-redhat-quarkus-wsl -e zsh
+```
+
+## launch project
+
+```
+project_name=random-integers
+
+java_version=latest
+maven_version=latest
+
+dev_home=/home/jamie/dev
+projects_home=$dev_home/projects
+project_home=$projects_home/$project_name
+
+export JAVA_HOME=/opt/java/$java_version
+export MAVEN_HOME=/opt/maven/$maven_version
+
+export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+
+cd $project_home && code ../$project_name.code-workspace --profile "Quarkus"
+```
+
+## build project
+
+```
+project_name=random-integers
+
+java_version=latest
+maven_version=latest
+
+dev_home=/home/jamie/dev
+projects_home=$dev_home/projects
+project_home=$projects_home/$project_name
+
+export JAVA_HOME=/opt/java/$java_version
+export MAVEN_HOME=/opt/maven/$maven_version
+
+export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+
+cd $project_home
+
+cd $project_home && QUARKUS_HTTP_PORT=8080 mvn quarkus:dev -Ddebug=5005
+cd $project_home && QUARKUS_HTTP_PORT=8090 mvn quarkus:dev -Ddebug=5006
+```
+
+## clone app and devops
+
+```
+cd $projects_home
+
+git clone git@github.com:jamie-burns0/${project_name}.git
+git clone git@github.com:jamie-burns0/${project_name}-devops.git
+```
+
+## Clean up copilot refs
+
+```
+git for-each-ref --format='delete %(refname)' refs/agents | git update-ref --stdin
+```
+
+## Openshift
+
+- https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.33/html/deploy_applications_to_openshift_container_platform/index
+- https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.33/html/deploy_applications_to_openshift_container_platform/deploying-to-openshift-s2i-howto
+
+### install the openshift cli on kali linux
+
+```
+wget https://downloads-openshift-console.apps.rm2.thpm.p1.openshiftapps.com/amd64/linux/oc.tar
+tar -xvf oc.tar
+sudo mv oc /usr/local/bin
+oc help
+```
+
+### podman build - build for JVM runtime
+
+```
+podman build -t ${project_name}-docker -f ../${project_name}-devops/container/Dockerfile.jvm .
+podman run --rm --name ${project_name}-docker -p 8081:8080 ${project_name}-docker:latest
+
+curl localhost:8081/generate
+```
+
+### podman build - build for native
+
+- https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.33/html/compile_applications_to_native_executables/assembly_quarkus-building-native-executable
+
+The red hat openshift developer sandbox does not appear to support build for native. So we are going to build on our local podman and push to the sandbox image repository
+
+```
+# WSL
+
+# redhat_username=jamie-burns0
+# redhat_password="..."
+# podman login -u $redhat_username -p $redhat_password quay.io
+# podman login -u $redhat_username -p $redhat_password registry.redhat.io
+# podman login -u $redhat_username -p $redhat_password registry.access.redhat.com
+
+podman build -t ${project_name}-docker-native -f ../${project_name}-devops/container/Dockerfile.native .
+podman run --rm -it --name ${project_name}-docker-native -p 8081:8080 localhost/${project_name}-docker-native:latest
+
+podman exec -it ${project_name}-docker-native /bin/bash
+curl -s localhost:8080/generate
+
+# get oc login command from web console
+
+oc login ...
+oc registry login
+
+podman push localhost/${project_name}-docker-native:latest docker://default-route-openshift-image-registry.apps.rm2.thpm.p1.openshiftapps.com/jamie-burns0-dev/${project_name}-docker-native:latest
+
+oc new-app --name=${project_name}-docker-native ${project_name}-docker-native
+oc expose svc/${project_name}-docker-native
+oc create route edge ${project_name}-docker-native-secure --service=${project_name}-docker-native
+
+oc get routes
+--> will return two routes - one insecure (http), one secure (https)
+
+http://random-integers-docker-native-jamie-burns0-dev.../generate
+https://random-integers-docker-native-secured-jamie-burns0-dev.../generate
+
+oc delete all -l app=${project_name}-docker-native
+oc delete is/${project_name}-docker-native
+```
+
+<-- FRIDAY
+- update below
+
+### openshift build - docker strategy
+
+- https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/builds_using_buildconfig/build-strategies
+
+```
+oc delete all -l app=learn-quarkus-03-docker-jvm && \
+oc delete all -l buildconfig=learn-quarkus-03-docker-jvm && \
+oc delete bc/learn-quarkus-03-docker-jvm && \
+oc delete is/learn-quarkus-03-docker-jvm
+
+oc create is learn-quarkus-03
+
+# because our dockerfile is not called Dockerfile and does not live in the project root, we need to create our buildconfig this way
+
+oc apply -f - <<'EOF'
+(paste contents of our openshift/Dockerfile.jvm here)
+EOF
+
+# if our buildconfig already exists, start a new build
+oc start-build learn-quarkus-03-docker-jvm
+
+# otherwise
+oc logs -f bc/learn-quarkus-03-docker-jvm
+
+oc new-app --name=learn-quarkus-03-docker-jvm --image-stream=learn-quarkus-03:docker-jvm
+
+oc rsh deploy/learn-quarkus-03-docker
+curl localhost:8080/fd/sorted
+exit
+
+oc expose svc/learn-quarkus-03-docker
+curl learn-quarkus-03-docker-jamie-burns0-dev.../fd/sorted
+http://learn-quarkus-03-docker-jamie-burns0-dev.../fd/sorted
+
+oc create route edge learn-quarkus-03-docker-secure --service=learn-quarkus-03-docker
+https://learn-quarkus-03-docker-secure-jamie-burns0-dev.../fd/sorted
+
+
+oc new-app --name=learn-quarkus-03-docker --strategy=docker git@github.com:jamie-burns0/learn-quarkus-03.git#openshift-docker-build --source-secret=github-ssh --dry-run
+
+oc new-app --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build --source-secret=github-ssh --dry-run
+
+oc new-build --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build --dry-run
+
+oc start-build learn-quarkus-03-docker --follow
+
+
+Wsl
+
+# our output imagestream needs to exist before we run oc start-build
+
+# if our yaml doesn't have an ImageStream definition, we can create our imagestream from the cli
+oc create is learn-quarkus-03
+
+# otherwise
+oc apply -f openshift/buildconfig-docker-jvm.yaml
+
+oc start-build learn-quarkus-03-docker-jvm
+
+oc logs -f bc/learn-quarkus-03-docker-jvm
+
+oc new-app --name=learn-quarkus-03-docker-jvm --image-stream=learn-quarkus-03:docker-jvm
+oc logs -f deploy/learn-quarkus-03-docker-jvm
+```
+
+### build - s2i strategy
+
+```
+Powershell
+
+ssh-keygen -t ed25519 -C "openshift-s2i" -f ./openshift-s2i
+
+
+GitHub
+
+- https://github.com/jamie-burns0/learn-quarkus-03 > Settings > Deploy keys
+- add contents of ./openshift-s2i.pub
+
+
+Openshift
+
+oc create secret generic github-ssh --from-file=ssh-privatekey=./openshift-s2i --type=kubernetes.io/ssh-auth
+
+oc secret link builder github-ssh
+
+oc import-image ubi9/openjdk-21 --from=registry.access.redhat.com/ubi9/openjdk-21 --confirm
+
+oc new-app --name=learn-quarkus-03 registry.access.redhat.com/ubi9/openjdk-21~git@github.com:jamie-burns0/learn-quarkus-03.git --source-secret=github-ssh
+
+oc logs -f bc/learn-quarkus-03
+oc logs -f deploy/learn-quarkus-03
+
+oc rsh deploy/learn-quarkus-03
+curl localhost:8080/fd/sorted
+exit
+
+oc expose svc/learn-quarkus-03
+curl learn-quarkus-03-jamie-burns0-dev.../fd/sorted
+http://learn-quarkus-03-jamie-burns0-dev.../fd/sorted
+
+oc create route edge learn-quarkus-03-secure --service=learn-quarkus-03
+https://learn-quarkus-03-secure-jamie-burns0-dev.../fd/sorted
+
+oc delete all -l app=learn-quarkus-03 && \
+oc delete bc/learn-quarkus-03 && \
+oc delete is/learn-quarkus-03
+
+
+Wsl
+
+# our output imagestream needs to exist before we run oc start-build
+
+# if our yaml doesn't have an ImageStream definition, we can create our imagestream from the cli
+oc create is learn-quarkus-03
+
+# otherwise
+oc apply -f openshift/buildconfig-s2i.yaml
+
+oc start-build learn-quarkus-03
+oc logs -f bc/learn-quarkus-03
+
+oc new-app --name=learn-quarkus-03 --image-stream=learn-quarkus-03:s2i
+oc logs -f deploy/learn-quarkus-03
+```
+
+### helm
+
+- https://developers.redhat.com/learn/openshift/deploy-red-hat-openshift-using-helm-charts
+- https://helm.sh/docs/
+- https://helm.sh/docs/intro/install/
+
+```
+# WSL
+
+HELM_VERSION=4.3.1
+wget https://get.helm.sh/helm-v$HELM_VERSION-linux-amd64.tar.gz
+tar -zxvf helm-v$HELM_VERSION-linux-amd64.tar.gz
+sudo mv linux-amd64/helm /usr/local/bin/helm
+rm helm-v$HELM_VERSION-linux-amd64.tar.gz
+helm version
+```
+
+<-- Monday
+- on says it supports both jvm and native
+- can we get it working from the cli
+- can we use it in our pipeline or in a new pipeline
+- then kustomize
+- then templates
+
+```
+# WSL
+
+oc get helmchartrepositories -o yaml
+helm repo add openshift-helm-charts https://charts.openshift.io
+helm search repo openshift-helm-charts | less
+
+helm pull openshift-helm-charts/redhat-quarkus --untar --destination redhat-quarkus
+cd redhat-quarkus/quarkus/
+cat README.md | less
+
+# option 1
+
+- use helm to deploy a previously built image
+- set build.enabled=false
+- for image.name, we can get our image name from the latest
+  TaskRun:deploy or "oc get is learn-quarkus-03-docker-jvm -o yaml"
+- since we are deploying and not building i deleted all the build 
+  related values
+- add startupProbe to values.yaml and update templates/deployment.yaml
+  to include the startup probe - copy how it adds livenessProbe
+
+  startupProbe:
+    httpGet:
+      path: /q/health/started
+      port: 8080
+      scheme: HTTP
+    initialDelaySeconds: 2
+    timeoutSeconds: 1
+    periodSeconds: 1
+    successThreshold: 1
+    failureThreshold: 900
+
+  livenessProbe:
+    httpGet:
+      path: /q/health/live
+      port: 8080
+      scheme: HTTP
+    initialDelaySeconds: 0
+    timeoutSeconds: 1
+    periodSeconds: 30
+    successThreshold: 1
+    failureThreshold: 3
+
+  readinessProbe:
+    ...
+
+vim values.yaml
+... update with our values - see above
+
+helm install learn-quarkus-03-docker-jvm-helm .
+oc get all | grep helm
+helm uninstall learn-quarkus-03-docker-jvm-helm
+
+
+helm install learn-quarkus-03-docker-native-helm .
+oc logs bc/learn-quarkus-03-docker-native-helm --follow
+
+oc logs deployments/learn-quarkus-03-docker-native-helm 
+oc get po learn-quarkus-03-docker-native-helm-594574bcd6-nm79f -o yaml
+
+clear
+helm get all learn-quarkus-03-docker-native-helm
+
+helm delete learn-quarkus-03-docker-native-helm
+```
+
+### pipeline (tekton) build
+
+```
+# WSL
+
+wget https://tkn-cli-serve-openshift-pipelines.apps.rm2.thpm.p1.openshiftapps.com/tkn/tkn-linux-amd64.tar.gz
+tar -xzvf tkn-linux-amd64.tar.gz
+sudo mv tkn tkn-pac opc /usr/local/bin
+rm tkn-linux-amd64.tar.gz
+tkn --help
+```
+
+### pipeline build - docker strategy
+
+```
+# create pvc
+oc apply -f openshift/learn-quarkus-03-docker-jvm-pipeline-pvc.yaml
+
+# create pipeline
+oc apply -f openshift/learn-quarkus-03-docker-jvm-pipeline.yaml
+
+# if the PVC exists
+tkn p start learn-quarkus-03-docker-jvm -w name=workspace,claimName=learn-quarkus-03-docker-jvm-pipeline-pvc --use-param-defaults
+
+# otherwise
+tkn p start learn-quarkus-03-docker-jvm -w name=workspace,volumeClaimTemplateFile=openshift/learn-quarkus-03-docker-jvm-pipeline-pvc-workspace-template.yaml --use-param-defaults
+
+tkn p logs learn-quarkus-03-docker-jvm -f -L
+```
+
+### trigger - docker strategy
+
+- https://tekton.dev/docs/triggers/
+- https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.24/html/creating_cicd_pipelines/creating-applications-with-cicd-pipelines#adding-triggers_creating-applications-with-cicd-pipelines
+
+```
+SECRET=$(openssl rand -hex 20)
+oc create secret generic github-webhook-secret --from-literal=secretToken="$SECRET"
+echo "$SECRET"   # paste this into the GitHub webhook "Secret" field
+
+oc apply -f openshift/learn-quarkus-03-docker-jvm-trigger.yaml
+
+oc create route edge el-learn-quarkus-03-docker-jvm-secure --service=el-learn-quarkus-03-docker-jvm
+
+echo "URL: $(oc get route el-learn-quarkus-03-docker-jvm-secure --template='https://{{.spec.host}}')"
+
+# GitHub
+- https://docs.github.com/en/webhooks/using-webhooks/creating-webhooks
+
+repository > Settings > Webhooks > Add webhook
+Payload URL: URL
+Content type: application/json
+Secret: SECRET
+
+# Linux
+
+watch oc get pipelineruns,po
+
+# WSL
+
+git commit -m "empty-commit" --allow-empty && git push
+
+oc log po/learn-quarkus-03-docker-jvm-run-...-pod -f
+tkn p log -n jamie-burns0-dev -f -L
+```
+
+## new quarkus project
+
+- https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.33/html/getting_started_with_red_hat_build_of_quarkus/assembly_quarkus-getting-started#proc_quarkus-creating-proj
+- https://quarkus.io/version/3.33/guides/maven-tooling
+- https://quarkus.io/version/3.33/guides/quarkus-maven-plugin
+
+- https://code.quarkus.redhat.com
+
+```
+project_name=learn-quarkus-03
+
+quarkus_platform_version=3.33.2.SP3-redhat-00003
+
+java_version=latest
+maven_version=latest
+
+projects_home=/home/jamie/dev/projects
+project_home=$projects_home/$project_name
+
+export JAVA_HOME=/opt/java/$java_version
+export MAVEN_HOME=/opt/maven/$maven_version
+
+export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+
+cd $projects_home
+
+projectGroupId=me.jamieburns
+className=${projectGroupId}.MyResource
+myPath="/hello"
+
+mvn com.redhat.quarkus.platform:quarkus-maven-plugin:${quarkus_platform_version}:create \
+    -DprojectGroupId=${projectGroupId} \
+    -DprojectArtifactId=${project_name} \
+    -DplatformGroupId=com.redhat.quarkus.platform \
+    -DplatformVersion=${quarkus_platform_version} \
+    -DclassName="${className}" \
+    -Dpath="${myPath}"
+
+rm -rf $projects_home/$project_name/mvnw* $projects_home/$project_name/.mvn/
+
+cd $project_home
+
+tee -a ${projects_home}/${project_name}.code-workspace > /dev/null <<EOT
+{
+    "folders": [
+        {
+            "path": "${project_name}"
+        }
+    ],
+    "settings": {
+        "files.autoSave": "afterDelay",
+        "editor.inlayHints.enabled": "offUnlessPressed",
+        "editor.parameterHints.enabled": false,
+        "editor.quickSuggestions": {
+            "other": "off",
+            "comments": "off",
+            "strings": "off"
+        },
+        "editor.quickSuggestionsDelay": 3000,
+        "editor.inlineSuggest.showToolbar": "onHover",
+        "editor.inlineSuggest.enabled": false,
+        "editor.inlineSuggest.suppressSuggestions": true,
+        "editor.detectIndentation": false,
+        "editor.codeLens": false,
+        "editor.folding": false,
+        "editor.hover.delay": 3000,
+        "editor.lightbulb.enabled": "onCode",
+        "editor.minimap.enabled": true,
+        "editor.minimap.size": "fit",
+        "editor.snippetSuggestions": "none",
+        "editor.suggest.preview": false,
+        "java.signatureHelp.enabled": false,
+        "java.autobuild.enabled": false,
+        "java.project.explorer.showNonJavaResources": true,
+        "java.dependency.packagePresentation": "flat",
+        "java.configuration.updateBuildConfiguration": "disabled",
+        "java.configuration.detectJdksAtStart": false,
+        "java.compile.nullAnalysis.mode": "automatic",
+        "maven.executable.preferMavenWrapper": false,
+        "maven.terminal.useJavaHome": true,
+        "workbench.startupEditor": "none"
+    }
+}
+EOT
+
+tee -a ${project_home}/.vscode/launch.json > /dev/null <<EOT
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Attach to ${project_name}",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": "5005"
+        }
+    ]
+}
+EOT
+
+```
+
+We can use gh to create the remote repository from the command line
+however we have to deal with auth tokens - what rights does our token need
+then use "gh auth login" to login with our token
+and then there will be a gh command to create the remote repository
+FOR NOW, we create the repository on GitHub using the browser
+then we continue the commands below
+
+```
+git init -b main .
+git remote add origin git@github.com:jamie-burns0/learn-quarkus-02.git
+
+git status
+git add .
+git commit -m "create quarkus project"
+
+git fetch --all --prune
+git branch --set-upstream-to=origin/main main
+git pull --rebase
+git push
+```
+
+## add JPA support
+
+- https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.27/html/configure_data_sources/datasources
+
+```
+mvn quarkus:add-extension -Dextensions="hibernate-orm-panache, quarkus-jdbc-postgres"
+mvn quarkus:add-extension -Dextensions="quarkus-rest-jsonb"
+mvn quarkus:add-extension -Dextensions="smallrye-openapi"
+
+-- from RedHat registry.redhat.io
+- https://catalog.redhat.com/en/software/containers/rhel9/postgresql-16/657b03866783e1b1fb87e142#overview
+- worked first time
+- bigger image than alpine and smaller than crunchy
+
+redhat_username=...
+redhat_password="..."
+
+podman login -u $redhat_username -p $redhat_password registry.redhat.io
+podman pull registry.redhat.io/rhel9/postgresql-16:9.6
+
+podman volume create pgdata
+
+podman run --rm -d --name postgres \
+    -e POSTGRESQL_USER=developer \
+    -e POSTGRESQL_PASSWORD=developer \
+    -e POSTGRESQL_DATABASE=db \
+    -p 5432:5432 \
+    --mount type=volume,source=pgdata,destination=/var/lib/pgsql/data,Z \
+    rhel9/postgresql-16:9.6
+
+# Connect as postgres superuser (default superuser in PostgreSQL)
+podman exec -it postgres psql -U postgres -c "CREATE DATABASE devdb;"
+podman exec -it postgres psql -U postgres -c "CREATE DATABASE testdb;"  
+podman exec -it postgres psql -U postgres -c "CREATE DATABASE itdb;"
+podman exec -it postgres psql -U postgres -c "CREATE DATABASE proddb;"
+
+# Grant ownership to developer user
+podman exec -it postgres psql -U postgres -c "
+ALTER DATABASE devdb OWNER TO developer;
+ALTER DATABASE testdb OWNER TO developer;
+ALTER DATABASE itdb OWNER TO developer;
+ALTER DATABASE proddb OWNER TO developer;
+"
+
+
+-- from Docker repository
+- see https://hub.docker.com/_/postgres
+- worked first time
+- small image if we use alpine
+- POSTGRES_USER defaults to postgres
+- POSTGRES_DB defaults to the value of POSTGRES_USER
+
+
+podman pull docker.io/library/postgres:alpine
+
+podman run --rm -d --name postgres \
+    -p 5432:5432 \
+    -e POSTGRES_PASSWORD=postgres \
+    docker.io/library/postgres:alpine
+
+podman logs postgres --follow
+
+
+-- from Red Hat registry.connect.redhat.com
+- this container did not start
+- might need to add -e POSTGRES_PASSWORD to the podman run command
+- its a large image
+
+redhat_username=...
+redhat_password="..."
+
+podman login -u $redhat_username -p $redhat_password registry.connect.redhat.com
+
+podman pull registry.connect.redhat.com/crunchydata/crunchy-postgres:ubi9-16.10-2542
+
+podman run --rm -d --name postgres \
+    -p 5432:5432 \
+    registry.connect.redhat.com/crunchydata/crunchy-postgres:ubi9-16.10-2542
+```
+
+
+## build kali-quarkus-wsl
+
+```
+$timestamp="20240801-1002"
+$distro_name="kali-java-wsl"
+$vm_name="kali-redhat-quarkus-wsl"
+
+wsl --import $vm_name C:\dev\work\virtual-machines\$vm_name c:\dev\work\templates\$distro_name-base-$timestamp.tar
+
+wsl ~ -d $vm_name -e zsh
+
+sudo -E wget https://archive.kali.org/archive-keyring.gpg -O /usr/share/keyrings/kali-archive-keyring.gpg
+sudo apt update && sudo apt full-upgrade && sudo apt autoremove
+
+exit
+
+wsl --shutdown
+
+(wait 8 seconds)
+
+wsl ~ -d $vm_name -e zsh
+```
+
+## GitHub CLI
+
+```
+sudo apt install gh
+```
+
+## Red Hat build of Quarkus (RBOQ)
+
+### podman
+
+Troubleshooting - see https://github.com/containers/podman/blob/main/troubleshooting.md
+
+```
+sudo apt install podman
+podman --version
+
+echo "/ / none bind,rshared 0 0" | sudo tee -a /etc/fstab
+```
+
+The command above addresses the following warning when starting postgresql in podman, 
+
+> "WARN[0000] "/" is not a shared mount, this could cause issues or missing mounts with rootless containers"
+
+From Claude,
+
+This warning is related to how Podman handles mount propagation in rootless mode. The warning occurs because your root filesystem (/) isn't configured as a shared mount, which can affect how volume mounts work with rootless containers.
+
+Solution 1: Make root filesystem a shared mount (Recommended)
+
+```
+sudo mount --make-rshared /
+```
+
+To make this permanent, add this to fstab:
+
+```
+echo "/ / none bind,rshared 0 0" | sudo tee -a /etc/fstab
+```
+
+For more information, see
+- https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html-single/managing_file_systems/index#creating-a-shared-mount-point-duplicate_sharing-a-mount-on-multiple-mount-points
+- https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html-single/system_design_guide/index#creating-a-shared-mount-point-duplicate_sharing-a-mount-on-multiple-mount-points
+
+### Red Hat OpenJDK
+
+- https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.27/html/getting_started_with_red_hat_build_of_quarkus/assembly_quarkus-getting-started
+- login to Red Hat Developer 
+- jamie-burns0
+- download Red Hat OpenJDK
+
+```
+sudo apt install xz-utils
+xz --version
+
+java_version=java-21-openjdk-21.0.9.0.10-1.portable.jdk.x86_64
+java_download_filename=${java_version}.tar.xz
+
+cp /mnt/c/Users/Jamie/Downloads/${JAVA_DOWNLOAD_FILENAME} /tmp
+sudo mkdir -p /opt/java
+sudo tar xvf /tmp/${java_download_filename} -C /opt/java
+sudo ln -vfns /opt/java/${java_version} /opt/java/latest
+
+rm /tmp/${java_download_filename}
+
+/opt/java/latest/bin/java --version
+```
+
+### Maven
+
+- https://maven.apache.org/download.cgi
+
+```
+export maven_version=apache-maven-3.9.11
+export maven_download_filename=${maven_version}-bin.tar.gz
+
+cp /mnt/c/users/jamie/downloads/${maven_download_filename} /tmp
+sudo mkdir -p /opt/maven
+sudo tar xvf /tmp/${maven_download_filename} -C /opt/maven
+sudo ln -vfns /opt/maven/${maven_version} /opt/maven/latest
+
+rm /tmp/${maven_download_filename}
+
+JAVA_HOME=/opt/java/latest /opt/maven/latest/bin/mvn --version
+```
+
+### Use Red Hat maven repository
+
+- original settings.xml can be found at MAVEN_HOME/conf/settings.xml
+
+```
+tee ~/.m2/settings.xml > /dev/null <<EOT
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+  <mirrors>
+    <mirror>
+      <id>maven-default-http-blocker</id>
+      <mirrorOf>external:http:*</mirrorOf>
+      <name>Pseudo repository to mirror external repositories initially using HTTP.</name>
+      <url>http://0.0.0.0/</url>
+      <blocked>true</blocked>
+    </mirror>
+  </mirrors>
+
+  <profiles>
+    <!-- Configure the Red Hat build of Quarkus Maven repository -->
+    <profile>
+      <id>red-hat-enterprise-maven-repository</id>
+      <repositories>
+        <repository>
+          <id>red-hat-enterprise-maven-repository</id>
+          <url>https://maven.repository.redhat.com/ga/</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>red-hat-enterprise-maven-repository</id>
+          <url>https://maven.repository.redhat.com/ga/</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+
+  <activeProfiles>
+    <activeProfile>red-hat-enterprise-maven-repository</activeProfile>
+  </activeProfiles>
+</settings>
+EOT
+```
+
+### Configuring Red Hat build of Quarkus extension registry client
+
+- see https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/3.27/html/getting_started_with_red_hat_build_of_quarkus/assembly_quarkus-getting-started#proc_configuring-quarkus-extension-registry-client
+
+```
+mkdir -p $HOME/.quarkus && \
+tee ~/.quarkus/config.yaml > /dev/null <<EOT
+registries:
+  - registry.quarkus.redhat.com
+      offering: redhat
+  - registry.quarkus.io
+EOT
+```
+
+
+### Quarkus CLI
+
+- https://quarkus.io/version/3.27/guides/cli-tooling
+
+```
+export JAVA_HOME=/opt/java/latest
+
+curl -Ls https://sh.jbang.dev | zsh -s - trust add https://repo1.maven.org/maven2/io/quarkus/quarkus-cli/
+curl -Ls https://sh.jbang.dev | zsh -s - app install --fresh --force quarkus@quarkusio
+
+exit
+
+wsl ~ -d kali-redhat-quarkus-wsl -e zsh
+
+export JAVA_HOME=/opt/java/latest
+quarkus --version
+```
