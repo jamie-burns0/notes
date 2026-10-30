@@ -125,46 +125,56 @@ oc delete all -l app=${project_name}-docker-native
 oc delete is/${project_name}-docker-native
 ```
 
-<-- FRIDAY
-- update below
-
 ### openshift build - docker strategy
 
 - https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/builds_using_buildconfig/build-strategies
 
 ```
-oc delete all -l app=learn-quarkus-03-docker-jvm && \
-oc delete all -l buildconfig=learn-quarkus-03-docker-jvm && \
-oc delete bc/learn-quarkus-03-docker-jvm && \
-oc delete is/learn-quarkus-03-docker-jvm
+# WSL
 
-oc create is learn-quarkus-03
+appname=$project_name-docker-jvm
 
-# because our dockerfile is not called Dockerfile and does not live in the project root, we need to create our buildconfig this way
+oc delete all -l app=${appname} ; \
+oc delete all -l buildconfig=${appname} ; \
+oc delete cm -l app=${appname} ; \
+oc delete bc/${appname} ; \
+oc delete is/${project_name}
 
-oc apply -f - <<'EOF'
-(paste contents of our openshift/Dockerfile.jvm here)
-EOF
+# because our dockerfile is not called Dockerfile and does not live in the project root,
+# we need to create our buildconfig in one of these ways
+
+# either inline dockerfile
+
+oc apply -f ../${project_name}-devops/openshift/buildconfig-docker-jvm-with-inline-dockerfile.yaml
+
+# or configmap mounted dockerfile
+
+oc create cm ${appname} --from-file=../${project_name}-devops/container/Dockerfile.jvm && \
+oc label cm ${appname} app=${appname}
+
+oc apply -f ../${project_name}-devops/openshift/buildconfig-docker-jvm-with-cm-dockerfile.yaml
 
 # if our buildconfig already exists, start a new build
-oc start-build learn-quarkus-03-docker-jvm
+oc start-build ${appname}
 
 # otherwise
-oc logs -f bc/learn-quarkus-03-docker-jvm
+oc logs -f bc/${appname}
 
-oc new-app --name=learn-quarkus-03-docker-jvm --image-stream=learn-quarkus-03:docker-jvm
+oc new-app --name=${appname} --image-stream=${project_name}:docker-jvm
 
-oc rsh deploy/learn-quarkus-03-docker
-curl localhost:8080/fd/sorted
+oc rsh deploy/${appname}
+curl localhost:8080/generate
 exit
 
-oc expose svc/learn-quarkus-03-docker
-curl learn-quarkus-03-docker-jamie-burns0-dev.../fd/sorted
-http://learn-quarkus-03-docker-jamie-burns0-dev.../fd/sorted
+oc expose svc/${appname}
+oc get routes
+curl random-integers-docker-jvm-jamie-burns0-dev.apps.rm2.thpm.p1.openshiftapps.com/generate
+http://${appname}-jamie-burns0-dev.../generate
 
-oc create route edge learn-quarkus-03-docker-secure --service=learn-quarkus-03-docker
-https://learn-quarkus-03-docker-secure-jamie-burns0-dev.../fd/sorted
+oc create route edge ${appname}-secure --service=${appname}
+https://${appname}-secure-jamie-burns0-dev.../generate
 
+# unused
 
 oc new-app --name=learn-quarkus-03-docker --strategy=docker git@github.com:jamie-burns0/learn-quarkus-03.git#openshift-docker-build --source-secret=github-ssh --dry-run
 
@@ -173,24 +183,6 @@ oc new-app --name=learn-quarkus-03-docker --strategy=docker https://github.com/j
 oc new-build --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build --dry-run
 
 oc start-build learn-quarkus-03-docker --follow
-
-
-Wsl
-
-# our output imagestream needs to exist before we run oc start-build
-
-# if our yaml doesn't have an ImageStream definition, we can create our imagestream from the cli
-oc create is learn-quarkus-03
-
-# otherwise
-oc apply -f openshift/buildconfig-docker-jvm.yaml
-
-oc start-build learn-quarkus-03-docker-jvm
-
-oc logs -f bc/learn-quarkus-03-docker-jvm
-
-oc new-app --name=learn-quarkus-03-docker-jvm --image-stream=learn-quarkus-03:docker-jvm
-oc logs -f deploy/learn-quarkus-03-docker-jvm
 ```
 
 ### build - s2i strategy
