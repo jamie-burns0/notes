@@ -14,16 +14,8 @@ $git_home = "${tools_home}/git"
 
 $env:Path = "${git_home}/bin;${vscode_home};" + $env:Path
 
-cd $notes_home
-```
-
-
-# Launch vscode
-
-```
 cd $notes_home && code "${notes_name}.code-workspace" --profile "Notes" *> $null
 ```
-
 
 # clone
 

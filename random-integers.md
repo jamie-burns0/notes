@@ -77,8 +77,9 @@ oc help
 ### podman build - build for JVM runtime
 
 ```
-podman build -t ${project_name}-docker -f ../${project_name}-devops/container/Dockerfile.jvm .
-podman run --rm --name ${project_name}-docker -p 8081:8080 ${project_name}-docker:latest
+appname=$project_name-docker
+podman build -t ${appname} -f ./src/main/docker/Dockerfile.jvm .
+podman run --rm --name ${appname} -p 8081:8080 -e QUARKUS_PROFILE=dev ${appname}:latest
 
 curl localhost:8081/generate
 ```
@@ -98,10 +99,18 @@ The red hat openshift developer sandbox does not appear to support build for nat
 # podman login -u $redhat_username -p $redhat_password registry.redhat.io
 # podman login -u $redhat_username -p $redhat_password registry.access.redhat.com
 
-podman build -t ${project_name}-docker-native -f ../${project_name}-devops/container/Dockerfile.native .
-podman run --rm -it --name ${project_name}-docker-native -p 8081:8080 localhost/${project_name}-docker-native:latest
+appname=$project_name-docker-native
 
-podman exec -it ${project_name}-docker-native /bin/bash
+oc delete all -l app=${appname} ; \
+oc delete all -l buildconfig=${appname} ; \
+oc delete cm -l app=${appname} ; \
+oc delete bc/${appname} ; \
+oc delete is/${project_name}
+
+podman build -t ${appname} -f ./src/main/docker/Dockerfile.native .
+podman run --rm -it --name ${appname} -p 8081:8080 -e QUARKUS_PROFILE=dev localhost/${appname}:latest
+
+podman exec -it ${appname} /bin/bash
 curl -s localhost:8080/generate
 
 # get oc login command from web console
@@ -109,20 +118,19 @@ curl -s localhost:8080/generate
 oc login ...
 oc registry login
 
-podman push localhost/${project_name}-docker-native:latest docker://default-route-openshift-image-registry.apps.rm2.thpm.p1.openshiftapps.com/jamie-burns0-dev/${project_name}-docker-native:latest
+podman push localhost/${appname}:latest docker://default-route-openshift-image-registry.apps.rm2.thpm.p1.openshiftapps.com/jamie-burns0-dev/${appname}:latest
 
-oc new-app --name=${project_name}-docker-native ${project_name}-docker-native
-oc expose svc/${project_name}-docker-native
-oc create route edge ${project_name}-docker-native-secure --service=${project_name}-docker-native
+oc new-app --name=${appname} ${appname}
+oc create route edge ${appname} --service=${appname} --insecure-policy=Redirect
 
 oc get routes
---> will return two routes - one insecure (http), one secure (https)
+
+- http will redirect to https
 
 http://random-integers-docker-native-jamie-burns0-dev.../generate
-https://random-integers-docker-native-secured-jamie-burns0-dev.../generate
-
-oc delete all -l app=${project_name}-docker-native
-oc delete is/${project_name}-docker-native
+http://random-integers-docker-native-jamie-burns0-dev.../generate?numberOfIntegers=10
+http://random-integers-docker-native-jamie-burns0-dev.../generate?numberOfIntegers=1001
+http://random-integers-docker-native-jamie-burns0-dev.../config
 ```
 
 ### openshift build - docker strategy
@@ -134,27 +142,17 @@ oc delete is/${project_name}-docker-native
 
 appname=$project_name-docker-jvm
 
+cd $project_home
+
 oc delete all -l app=${appname} ; \
 oc delete all -l buildconfig=${appname} ; \
 oc delete cm -l app=${appname} ; \
 oc delete bc/${appname} ; \
 oc delete is/${project_name}
 
-# because our dockerfile is not called Dockerfile and does not live in the project root,
-# we need to create our buildconfig in one of these ways
+oc apply -f ../${project_name}-devops/openshift/buildconfig-docker-jvm.yaml
 
-# either inline dockerfile
-
-oc apply -f ../${project_name}-devops/openshift/buildconfig-docker-jvm-with-inline-dockerfile.yaml
-
-# or configmap mounted dockerfile
-
-oc create cm ${appname} --from-file=../${project_name}-devops/container/Dockerfile.jvm && \
-oc label cm ${appname} app=${appname}
-
-oc apply -f ../${project_name}-devops/openshift/buildconfig-docker-jvm-with-cm-dockerfile.yaml
-
-# if our buildconfig already exists, start a new build
+# if our build has not started, start a new build
 oc start-build ${appname}
 
 # otherwise
@@ -166,23 +164,13 @@ oc rsh deploy/${appname}
 curl localhost:8080/generate
 exit
 
-oc expose svc/${appname}
+oc create route edge ${appname} --service=${appname} --insecure-policy=Redirect
+
 oc get routes
-curl random-integers-docker-jvm-jamie-burns0-dev.apps.rm2.thpm.p1.openshiftapps.com/generate
-http://${appname}-jamie-burns0-dev.../generate
 
-oc create route edge ${appname}-secure --service=${appname}
-https://${appname}-secure-jamie-burns0-dev.../generate
-
-# unused
-
-oc new-app --name=learn-quarkus-03-docker --strategy=docker git@github.com:jamie-burns0/learn-quarkus-03.git#openshift-docker-build --source-secret=github-ssh --dry-run
-
-oc new-app --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build --source-secret=github-ssh --dry-run
-
-oc new-build --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build --dry-run
-
-oc start-build learn-quarkus-03-docker --follow
+curl random-integers-docker-jvm-jamie-burns0-dev.../generate
+http://random-integers-docker-jvm-jamie-burns0-dev.../generate
+http://random-integers-docker-jvm-jamie-burns0-dev.../q/swagger-ui
 ```
 
 ### build - s2i strategy
@@ -261,13 +249,6 @@ sudo mv linux-amd64/helm /usr/local/bin/helm
 rm helm-v$HELM_VERSION-linux-amd64.tar.gz
 helm version
 ```
-
-<-- Monday
-- on says it supports both jvm and native
-- can we get it working from the cli
-- can we use it in our pipeline or in a new pipeline
-- then kustomize
-- then templates
 
 ```
 # WSL
@@ -351,19 +332,41 @@ tkn --help
 ### pipeline build - docker strategy
 
 ```
+appname=$project_name-docker-jvm
+
+oc delete all -l app=${appname} ; \
+oc delete all -l buildconfig=${appname} ; \
+oc delete cm -l app=${appname} ; \
+oc delete bc/${appname} ; \
+oc delete is/${project_name}
+
 # create pvc
-oc apply -f openshift/learn-quarkus-03-docker-jvm-pipeline-pvc.yaml
+oc apply -f openshift/${appname}-pipeline-pvc.yaml
 
 # create pipeline
-oc apply -f openshift/learn-quarkus-03-docker-jvm-pipeline.yaml
+oc apply -f openshift/${appname}-pipeline.yaml
 
 # if the PVC exists
-tkn p start learn-quarkus-03-docker-jvm -w name=workspace,claimName=learn-quarkus-03-docker-jvm-pipeline-pvc --use-param-defaults
+tkn p start ${appname} -w name=workspace,claimName=${appname}-pipeline-pvc --use-param-defaults
 
 # otherwise
-tkn p start learn-quarkus-03-docker-jvm -w name=workspace,volumeClaimTemplateFile=openshift/learn-quarkus-03-docker-jvm-pipeline-pvc-workspace-template.yaml --use-param-defaults
+tkn p start ${appname} -w name=workspace,volumeClaimTemplateFile=openshift/${appname}-pipeline-pvc-workspace-template.yaml --use-param-defaults
 
-tkn p logs learn-quarkus-03-docker-jvm -f -L
+tkn p logs ${appname} -f -L
+
+oc get routes
+
+http://.../generate -(302)-> https://.../generate
+http://.../generate?numberOfIntegers=10
+http://.../generate?numberOfIntegers=1001
+
+<-- Monday
+- passing 1001 throws a BadRequestException, but the client just gets a 404
+  how do we pass a message back to the client so they know how to fix things
+  at their end?
+- create a webhook in our random-integers repository
+- add openapi to the api
+
 ```
 
 ### trigger - docker strategy
