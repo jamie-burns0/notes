@@ -262,13 +262,6 @@ rm helm-v$HELM_VERSION-linux-amd64.tar.gz
 helm version
 ```
 
-<-- Monday
-- on says it supports both jvm and native
-- can we get it working from the cli
-- can we use it in our pipeline or in a new pipeline
-- then kustomize
-- then templates
-
 ```
 # WSL
 
@@ -351,19 +344,40 @@ tkn --help
 ### pipeline build - docker strategy
 
 ```
+appname=$project_name-docker-jvm
+
+oc delete all -l app=${appname} ; \
+oc delete all -l buildconfig=${appname} ; \
+oc delete cm -l app=${appname} ; \
+oc delete bc/${appname} ; \
+oc delete is/${project_name}
+
 # create pvc
-oc apply -f openshift/learn-quarkus-03-docker-jvm-pipeline-pvc.yaml
+oc apply -f openshift/${appname}-pipeline-pvc.yaml
 
 # create pipeline
-oc apply -f openshift/learn-quarkus-03-docker-jvm-pipeline.yaml
+oc apply -f openshift/${appname}-pipeline.yaml
 
 # if the PVC exists
-tkn p start learn-quarkus-03-docker-jvm -w name=workspace,claimName=learn-quarkus-03-docker-jvm-pipeline-pvc --use-param-defaults
+tkn p start ${appname} -w name=workspace,claimName=${appname}-pipeline-pvc --use-param-defaults
 
 # otherwise
-tkn p start learn-quarkus-03-docker-jvm -w name=workspace,volumeClaimTemplateFile=openshift/learn-quarkus-03-docker-jvm-pipeline-pvc-workspace-template.yaml --use-param-defaults
+tkn p start ${appname} -w name=workspace,volumeClaimTemplateFile=openshift/${appname}-pipeline-pvc-workspace-template.yaml --use-param-defaults
 
-tkn p logs learn-quarkus-03-docker-jvm -f -L
+tkn p logs ${appname} -f -L
+
+oc get routes
+
+http://.../generate -(302)-> https://.../generate
+http://.../generate?numberOfIntegers=10
+http://.../generate?numberOfIntegers=1001
+
+<-- Monday
+- passing 1001 throws a BadRequestException, but the client just gets a 404
+  how do we pass a message back to the client so they know how to fix things
+  at their end?
+- add openapi to the api
+
 ```
 
 ### trigger - docker strategy
