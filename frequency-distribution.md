@@ -5,7 +5,7 @@ wsl --cd "~" -d kali-redhat-quarkus-wsl -e zsh
 ## launch project
 
 ```
-project_name=learn-quarkus-03
+project_name=frequency-distribution
 
 java_version=latest
 maven_version=latest
@@ -25,7 +25,7 @@ cd $project_home && code ../$project_name.code-workspace --profile "Quarkus"
 ## build project
 
 ```
-project_name=learn-quarkus-03
+project_name=frequency-distribution
 
 java_version=latest
 maven_version=latest
@@ -43,6 +43,15 @@ cd $project_home
 
 cd $project_home && QUARKUS_HTTP_PORT=8080 mvn quarkus:dev -Ddebug=5005
 cd $project_home && QUARKUS_HTTP_PORT=8090 mvn quarkus:dev -Ddebug=5006
+```
+
+## clone
+
+```
+cd $projects_home
+
+git clone git@github.com:jamie-burns0/${project_name}.git
+git clone git@github.com:jamie-burns0/${project_name}-devops.git
 ```
 
 ## Clean up copilot refs
@@ -68,8 +77,12 @@ oc help
 ### podman build - build for JVM runtime
 
 ```
-podman build -t learn-quarkus-03-docker -f openshift/Dockerfile.jvm .
-podman run --rm --name learn-quarkus-03-docker -p 8081:8080 learn-quarkus-03-docker:latest
+appname=$project_name-docker-jvm
+
+podman build -t ${appname} -f ./src/main/docker/Dockerfile.jvm .
+podman run --rm --name ${appname} -p 8081:8080 ${appname}:latest
+
+curl localhost:8081/fd/sorted
 ```
 
 ### podman build - build for native
@@ -79,8 +92,7 @@ podman run --rm --name learn-quarkus-03-docker -p 8081:8080 learn-quarkus-03-doc
 The red hat openshift developer sandbox does not appear to support build for native. So we are going to build on our local podman and push to the sandbox image repository
 
 ```
-git status
-git switch openshift-docker-native-build
+# WSL
 
 # redhat_username=jamie-burns0
 # redhat_password="..."
@@ -88,10 +100,20 @@ git switch openshift-docker-native-build
 # podman login -u $redhat_username -p $redhat_password registry.redhat.io
 # podman login -u $redhat_username -p $redhat_password registry.access.redhat.com
 
-podman build -t learn-quarkus-03-docker-native -f openshift/Dockerfile.native .
-podman run --rm -it --name abc localhost/learn-quarkus-03-docker-native:latest
+appname=$project_name-docker-native
 
-podman exec -it abc /bin/bash
+cd $project_home
+
+oc delete all -l app=${appname} ; \
+oc delete all -l buildconfig=${appname} ; \
+oc delete cm -l app=${appname} ; \
+oc delete bc/${appname} ; \
+oc delete is/${project_name}
+
+podman build -t ${appname} -f ./src/main/docker/Dockerfile.native .
+podman run --rm -it --name ${appname} -p 8081:8080 -e QUARKUS_PROFILE=dev localhost/${appname}:latest
+
+podman exec -it ${appname} /bin/bash
 curl -s localhost:8080/fd/sorted
 
 # get oc login command from web console
@@ -99,20 +121,17 @@ curl -s localhost:8080/fd/sorted
 oc login ...
 oc registry login
 
-podman push localhost/learn-quarkus-03-docker-native:latest docker://default-route-openshift-image-registry.apps.rm2.thpm.p1.openshiftapps.com/jamie-burns0-dev/learn-quarkus-03-docker-native:latest
+podman push localhost/${appname}:latest docker://default-route-openshift-image-registry.apps.rm2.thpm.p1.openshiftapps.com/jamie-burns0-dev/${appname}:latest
 
-oc new-app --name=learn-quarkus-03-docker-native learn-quarkus-03-docker-native
-oc expose svc/learn-quarkus-03-docker-native
-oc create route edge learn-quarkus-03-docker-native-secure --service=learn-quarkus-03-docker-native
+oc new-app --name=${appname} ${appname}
+oc create route edge ${appname} --service=${appname} --insecure-policy=Redirect
 
 oc get routes
---> will return two routes - one insecure (http), one secure (https)
 
-http://learn-quarkus-03-docker-native-jamie-burns0-dev.../fd/sorted
-https://learn-quarkus-03-docker-native-secure-jamie-burns0-dev.../fd/sorted
+- http will redirect to https
 
-oc delete all -l app=learn-quarkus-03-docker-native
-oc delete is/learn-quarkus-03-docker-native
+http://frequency-distribution-docker-native-jamie-burns0-dev.../fd/sorted
+http://frequency-distribution-docker-native-jamie-burns0-dev.../config
 ```
 
 ### openshift build - docker strategy
@@ -120,64 +139,39 @@ oc delete is/learn-quarkus-03-docker-native
 - https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/builds_using_buildconfig/build-strategies
 
 ```
-oc delete all -l app=learn-quarkus-03-docker-jvm && \
-oc delete all -l buildconfig=learn-quarkus-03-docker-jvm && \
-oc delete bc/learn-quarkus-03-docker-jvm && \
-oc delete is/learn-quarkus-03-docker-jvm
+# WSL
 
-oc create is learn-quarkus-03
+appname=$project_name-docker-jvm
 
-# because our dockerfile is not called Dockerfile and does not live in the project root, we need to create our buildconfig this way
+cd $project_home
 
-oc apply -f - <<'EOF'
-(paste contents of our openshift/Dockerfile.jvm here)
-EOF
+oc delete all -l app=${appname} ; \
+oc delete all -l buildconfig=${appname} ; \
+oc delete cm -l app=${appname} ; \
+oc delete bc/${appname} ; \
+oc delete is/${project_name}
 
-# if our buildconfig already exists, start a new build
-oc start-build learn-quarkus-03-docker-jvm
+oc apply -f ../${project_name}-devops/openshift/buildconfig-docker-jvm.yaml
+
+# if our build has not started, start a new build
+oc start-build ${appname}
 
 # otherwise
-oc logs -f bc/learn-quarkus-03-docker-jvm
+oc logs -f bc/${appname}
 
-oc new-app --name=learn-quarkus-03-docker-jvm --image-stream=learn-quarkus-03:docker-jvm
+oc new-app --name=${appname} --image-stream=${project_name}:docker-jvm
 
-oc rsh deploy/learn-quarkus-03-docker
+oc rsh deploy/${appname}
 curl localhost:8080/fd/sorted
 exit
 
-oc expose svc/learn-quarkus-03-docker
-curl learn-quarkus-03-docker-jamie-burns0-dev.../fd/sorted
-http://learn-quarkus-03-docker-jamie-burns0-dev.../fd/sorted
+oc create route edge ${appname} --service=${appname} --insecure-policy=Redirect
 
-oc create route edge learn-quarkus-03-docker-secure --service=learn-quarkus-03-docker
-https://learn-quarkus-03-docker-secure-jamie-burns0-dev.../fd/sorted
+oc get routes
 
-
-oc new-app --name=learn-quarkus-03-docker --strategy=docker git@github.com:jamie-burns0/learn-quarkus-03.git#openshift-docker-build --source-secret=github-ssh --dry-run
-
-oc new-app --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build --source-secret=github-ssh --dry-run
-
-oc new-build --name=learn-quarkus-03-docker --strategy=docker https://github.com/jamie-burns0/learn-quarkus-03.git#openshift-docker-build --dry-run
-
-oc start-build learn-quarkus-03-docker --follow
-
-
-Wsl
-
-# our output imagestream needs to exist before we run oc start-build
-
-# if our yaml doesn't have an ImageStream definition, we can create our imagestream from the cli
-oc create is learn-quarkus-03
-
-# otherwise
-oc apply -f openshift/buildconfig-docker-jvm.yaml
-
-oc start-build learn-quarkus-03-docker-jvm
-
-oc logs -f bc/learn-quarkus-03-docker-jvm
-
-oc new-app --name=learn-quarkus-03-docker-jvm --image-stream=learn-quarkus-03:docker-jvm
-oc logs -f deploy/learn-quarkus-03-docker-jvm
+curl frequency-distribution-docker-jvm-jamie-burns0-dev.../fd/sorted
+http://frequency-distribution-docker-jvm-jamie-burns0-dev.../fd/sorted
+http://frequency-distribution-docker-jvm-jamie-burns0-dev.../q/swagger-ui
 ```
 
 ### build - s2i strategy
@@ -366,35 +360,38 @@ tkn p logs learn-quarkus-03-docker-jvm -f -L
 - https://tekton.dev/docs/triggers/
 - https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.24/html/creating_cicd_pipelines/creating-applications-with-cicd-pipelines#adding-triggers_creating-applications-with-cicd-pipelines
 
+
 ```
-SECRET=$(openssl rand -hex 20)
-oc create secret generic github-webhook-secret --from-literal=secretToken="$SECRET"
-echo "$SECRET"   # paste this into the GitHub webhook "Secret" field
+appname=$project_name-docker-jvm
 
-oc apply -f openshift/learn-quarkus-03-docker-jvm-trigger.yaml
+cd $project_home-devops
 
-oc create route edge el-learn-quarkus-03-docker-jvm-secure --service=el-learn-quarkus-03-docker-jvm
+oc delete all -l app=${appname} ; \
+oc delete all -l buildconfig=${appname} ; \
+oc delete cm -l app=${appname} ; \
+oc delete bc/${appname} ; \
+oc delete is/${project_name}
 
-echo "URL: $(oc get route el-learn-quarkus-03-docker-jvm-secure --template='https://{{.spec.host}}')"
+# create pvc
+oc apply -f openshift/${appname}-pipeline-pvc.yaml
 
-# GitHub
-- https://docs.github.com/en/webhooks/using-webhooks/creating-webhooks
+# create pipeline
+oc apply -f openshift/${appname}-pipeline.yaml
 
-repository > Settings > Webhooks > Add webhook
-Payload URL: URL
-Content type: application/json
-Secret: SECRET
+# if the PVC exists
+tkn p start ${appname} -w name=workspace,claimName=${appname}-pipeline-pvc --use-param-defaults
 
-# Linux
+# otherwise
+tkn p start ${appname} -w name=workspace,volumeClaimTemplateFile=openshift/${appname}-pipeline-pvc-workspace-template.yaml --use-param-defaults
 
-watch oc get pipelineruns,po
+tkn p logs ${appname} -f -L
 
-# WSL
+oc get routes
 
-git commit -m "empty-commit" --allow-empty && git push
-
-oc log po/learn-quarkus-03-docker-jvm-run-...-pod -f
-tkn p log -n jamie-burns0-dev -f -L
+http://.../fd -(302)-> https://.../fd
+http://.../config
+http://.../q/health
+http://.../q/swagger-ui
 ```
 
 ## new quarkus project
@@ -406,7 +403,7 @@ tkn p log -n jamie-burns0-dev -f -L
 - https://code.quarkus.redhat.com
 
 ```
-project_name=learn-quarkus-03
+project_name=frequency-distribution
 
 quarkus_platform_version=3.33.2.SP3-redhat-00003
 
@@ -435,15 +432,16 @@ mvn com.redhat.quarkus.platform:quarkus-maven-plugin:${quarkus_platform_version}
     -DclassName="${className}" \
     -Dpath="${myPath}"
 
-rm -rf $projects_home/$project_name/mvnw* $projects_home/$project_name/.mvn/
-
-cd $project_home
+rm -rf $project_home/mvnw* $project_home/.mvn/
 
 tee -a ${projects_home}/${project_name}.code-workspace > /dev/null <<EOT
 {
     "folders": [
         {
             "path": "${project_name}"
+        },
+        {
+            "path": "${project_name}-devops
         }
     ],
     "settings": {
@@ -482,6 +480,8 @@ tee -a ${projects_home}/${project_name}.code-workspace > /dev/null <<EOT
 }
 EOT
 
+mkdir ${project_home}/.vscode && touch ${project_home}/.vscode/launch.json
+
 tee -a ${project_home}/.vscode/launch.json > /dev/null <<EOT
 {
     "version": "0.2.0",
@@ -496,7 +496,6 @@ tee -a ${project_home}/.vscode/launch.json > /dev/null <<EOT
     ]
 }
 EOT
-
 ```
 
 We can use gh to create the remote repository from the command line

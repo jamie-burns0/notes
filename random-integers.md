@@ -77,7 +77,10 @@ oc help
 ### podman build - build for JVM runtime
 
 ```
-appname=$project_name-docker
+appname=$project_name-docker-jvm
+
+cd $project_home
+
 podman build -t ${appname} -f ./src/main/docker/Dockerfile.jvm .
 podman run --rm --name ${appname} -p 8081:8080 -e QUARKUS_PROFILE=dev ${appname}:latest
 
@@ -359,14 +362,6 @@ oc get routes
 http://.../generate -(302)-> https://.../generate
 http://.../generate?numberOfIntegers=10
 http://.../generate?numberOfIntegers=1001
-
-<-- Monday
-- passing 1001 throws a BadRequestException, but the client just gets a 404
-  how do we pass a message back to the client so they know how to fix things
-  at their end?
-- create a webhook in our random-integers repository
-- add openapi to the api
-
 ```
 
 ### trigger - docker strategy
