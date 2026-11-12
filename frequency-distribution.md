@@ -22,6 +22,13 @@ export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
 cd $project_home && code ../$project_name.code-workspace --profile "Quarkus"
 ```
 
+<-- Monday
+- enable dynamic number of integers in frequency-distribution app
+- set a default value in dev, test and prod
+- handle response from random-integers for values outside our limits
+- test this locally quarkus:dev and podman
+- test this in openshift sandbox
+
 ## build project
 
 ```
