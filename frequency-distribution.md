@@ -25,6 +25,7 @@ cd $project_home && code ../$project_name.code-workspace --profile "Quarkus"
 <-- Monday
 - enable dynamic number of integers in frequency-distribution app
 - set a default value in dev, test and prod
+- handle unavailable random-integers api
 - handle response from random-integers for values outside our limits
 - test this locally quarkus:dev and podman
 - test this in openshift sandbox
@@ -48,8 +49,8 @@ export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
 
 cd $project_home
 
-cd $project_home && QUARKUS_HTTP_PORT=8080 mvn quarkus:dev -Ddebug=5005
-cd $project_home && QUARKUS_HTTP_PORT=8090 mvn quarkus:dev -Ddebug=5006
+mvn quarkus:dev
+mvn quarkus:dev -Dmax-number-of-integers=5
 ```
 
 ## clone

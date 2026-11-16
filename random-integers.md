@@ -42,7 +42,7 @@ export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
 cd $project_home
 
 cd $project_home && QUARKUS_HTTP_PORT=8080 mvn quarkus:dev -Ddebug=5005
-cd $project_home && QUARKUS_HTTP_PORT=8090 mvn quarkus:dev -Ddebug=5006
+cd $project_home && QUARKUS_HTTP_PORT=8081 mvn quarkus:dev -Ddebug=5006
 ```
 
 ## clone app and devops
