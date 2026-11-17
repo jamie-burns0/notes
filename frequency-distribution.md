@@ -23,7 +23,8 @@ cd $project_home && code ../$project_name.code-workspace --profile "Quarkus"
 ```
 
 <-- Monday
-- enable dynamic number of integers in frequency-distribution app
+
+
 - set a default value in dev, test and prod
 - handle unavailable random-integers api
 - handle response from random-integers for values outside our limits
@@ -51,6 +52,13 @@ cd $project_home
 
 mvn quarkus:dev
 mvn quarkus:dev -Dmax-number-of-integers=5
+
+# currently requires random-integers to be running on port 8081
+curl -X GET http://localhost:8080/fd/sorted
+
+curl -X POST http://localhost:8080/fd/sorted \
+  -H "Content-Type: application/json" \
+  -d '{"data": [10, 2, 8, 8, 5, 5, 5, 8, 5, 10]}'
 ```
 
 ## clone
@@ -88,9 +96,17 @@ oc help
 appname=$project_name-docker-jvm
 
 podman build -t ${appname} -f ./src/main/docker/Dockerfile.jvm .
-podman run --rm --name ${appname} -p 8081:8080 ${appname}:latest
 
-curl localhost:8081/fd/sorted
+podman network create fd-network
+
+podman run --rm --name ${appname} --network fd-network -p 8080:8080 -e QUARKUS_PROFILE=podman-dev ${appname}:latest
+
+# requires random-integers to be running on the same podman network
+curl -X GET http://localhost:8080/fd/sorted
+
+curl -X POST http://localhost:8080/fd/sorted \
+  -H "Content-Type: application/json" \
+  -d '{"data": [10, 2, 8, 8, 5, 5, 5, 8, 5, 10]}'
 ```
 
 ### podman build - build for native
@@ -119,10 +135,30 @@ oc delete bc/${appname} ; \
 oc delete is/${project_name}
 
 podman build -t ${appname} -f ./src/main/docker/Dockerfile.native .
-podman run --rm -it --name ${appname} -p 8081:8080 -e QUARKUS_PROFILE=dev localhost/${appname}:latest
+
+# Do not test the GET /fd or GET /fd/sorted endpoints. Our native build sets the 
+# runtime environment to prod. Our random-integers prod url is not a local url.
+# If we want to test frequency-distribution and random-integer integration
+# locally, use podman build for jvm above.
+#
+# If we really, really want to test both under native images, run these commands
+# to start frequency-distribution. For starting random-integers native, see
+# random-integers notes - podman build for native
+#
+# podman create network fd-network
+# podman run --rm -it --name ${appname} --network fd-network -p 8080:8080 -e QUARKUS_REST_CLIENT_RANDOM_INTEGERS_URL=http://random-integers-docker-native:8080 -e QUARKUS_LOG_LEVEL=DEBUG localhost/${appname}:latest
+
+# otherwise, to just test POST /fd or POST /fd/sorted
+
+podman run --rm -it --name ${appname} -p 8080:8080 localhost/${appname}:latest
 
 podman exec -it ${appname} /bin/bash
-curl -s localhost:8080/fd/sorted
+
+curl -X POST http://localhost:8080/fd/sorted \
+  -H "Content-Type: application/json" \
+  -d '{"data": [10, 2, 8, 8, 5, 5, 5, 8, 5, 10]}'
+
+exit
 
 # get oc login command from web console
 
@@ -138,8 +174,18 @@ oc get routes
 
 - http will redirect to https
 
+# For our GET /fd or GET /fd/sorted test, set the two env vars below
+
+oc set env deployment/${appname} QUARKUS_LOG_LEVEL=DEBUG QUARKUS_REST_CLIENT_RANDOM_INTEGERS_URL=http://random-integers-docker-native:8080
+
 http://frequency-distribution-docker-native-jamie-burns0-dev.../fd/sorted
 http://frequency-distribution-docker-native-jamie-burns0-dev.../config
+
+# otherwise, for only POST /fd or POST /fd/sorted
+
+curl -X POST https://frequency-distribution-docker-native-jamie-burns0-dev.../fd/sorted \
+  -H "Content-Type: application/json" \
+  -d '{"data": [10, 2, 8, 8, 5, 5, 5, 8, 5, 10]}'
 ```
 
 ### openshift build - docker strategy

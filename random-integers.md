@@ -82,7 +82,9 @@ appname=$project_name-docker-jvm
 cd $project_home
 
 podman build -t ${appname} -f ./src/main/docker/Dockerfile.jvm .
-podman run --rm --name ${appname} -p 8081:8080 -e QUARKUS_PROFILE=dev ${appname}:latest
+
+podman network create fd-network
+podman run --rm --name ${appname} --network fd-network -p 8081:8080 -e QUARKUS_PROFILE=dev ${appname}:latest
 
 curl localhost:8081/generate
 ```
@@ -111,10 +113,22 @@ oc delete bc/${appname} ; \
 oc delete is/${project_name}
 
 podman build -t ${appname} -f ./src/main/docker/Dockerfile.native .
-podman run --rm -it --name ${appname} -p 8081:8080 -e QUARKUS_PROFILE=dev localhost/${appname}:latest
+
+# See frequency-distribution notes - podman build for native section - for information
+# about testing integration between frequency-distribution native and 
+# random-integers native. For that we need the two commands below
+
+podman network create fd-network
+podman run --rm -it --name ${appname} --network fd-network -p 8081:8080 -e QUARKUS_LOG_LEVEL=DEBUG localhost/${appname}:latest
+
+# otherwise, for just testing random-integers native
+
+podman run --rm -it --name ${appname} -p 8081:8080 localhost/${appname}:latest
 
 podman exec -it ${appname} /bin/bash
 curl -s localhost:8080/generate
+exit
+
 
 # get oc login command from web console
 
