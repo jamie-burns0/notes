@@ -23,9 +23,6 @@ cd $project_home && code ../$project_name.code-workspace --profile "Quarkus"
 ```
 
 <-- Monday
-
-
-- set a default value in dev, test and prod
 - handle unavailable random-integers api
 - handle response from random-integers for values outside our limits
 - test this locally quarkus:dev and podman
@@ -51,7 +48,7 @@ export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
 cd $project_home
 
 mvn quarkus:dev
-mvn quarkus:dev -Dmax-number-of-integers=5
+QUARKUS_LOG_LEVEL=DEBUG && mvn quarkus:dev -Dmax-number-of-integers=5
 
 # currently requires random-integers to be running on port 8081
 curl -X GET http://localhost:8080/fd/sorted
