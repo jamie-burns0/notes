@@ -23,7 +23,7 @@ cd $project_home && code ../$project_name.code-workspace --profile "Quarkus"
 ```
 
 <-- Monday
-- handle unavailable random-integers api
+- handle unavailable random-integers api - retries, fallback, ...
 - handle response from random-integers for values outside our limits
 - test this locally quarkus:dev and podman
 - test this in openshift sandbox
@@ -48,7 +48,20 @@ export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
 cd $project_home
 
 mvn quarkus:dev
+
 QUARKUS_LOG_LEVEL=DEBUG && mvn quarkus:dev -Dmax-number-of-integers=5
+
+- in our project we have gone with reusable fault tolerance as an exercise
+  that allows us to override Retry/maxRetries at runtime or set the value
+  in application.properties, see https://smallrye.io/docs/smallrye-fault-tolerance/6.11.1/reference/reusable.html
+
+QUARKUS_LOG_LEVEL=DEBUG && mvn quarkus:dev -Dmax-number-of-integers=5 -Dquarkus.fault-tolerance.\"random-integers-client-retry\".retry.max-retries=10
+
+or 
+
+QUARKUS_LOG_LEVEL=DEBUG && mvn quarkus:dev -Dmax-number-of-integers=5 -Drandom-integers-client-retry/Retry/maxRetries=10
+
+unset QUARKUS_LOG_LEVEL
 
 # currently requires random-integers to be running on port 8081
 curl -X GET http://localhost:8080/fd/sorted
